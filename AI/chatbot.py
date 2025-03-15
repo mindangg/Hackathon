@@ -7,6 +7,6 @@ def analyze_symptoms(text):
     result = classifier(text)
     return result
 
-text_input = input('How are you feeling:')
-#acb
+text_input = input('How are you feeling: ')
+
 print(analyze_symptoms(text_input))

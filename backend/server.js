@@ -3,6 +3,8 @@ const express = require('express')
 const mongoose = require('mongoose')
 const cors = require('cors')
 
+const userRoutes = require('./routes/userRoutes')
+
 const app = express()
 
 // middleware
@@ -15,6 +17,9 @@ app.use((req, res, next) => {
 
 // cors
 app.use(cors({origin: 'http://localhost:5173'}))
+
+// routes
+app.use('/api/user', userRoutes)
 
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {

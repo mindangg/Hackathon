@@ -1,0 +1,25 @@
+*,
+*:before,
+*:after{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html{
+    scroll-behavior: smooth;
+}
+
+body{
+    background-color: var(--black);
+    font-family: 'Montserrat', 'Poppins', sans-serif;
+}
+
+:root{
+    --black: #201c1c;
+    --green: #25beb3;
+    --green-l: #25beb4ca;
+    --gray: #bbbbbb;
+    --error: red;
+    font-size: 16px;
+}
