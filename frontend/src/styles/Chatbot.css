@@ -28,21 +28,29 @@
     border-radius: 10px;
 }
 
-.webcam-popup button{
+.webcam-btn{
+    display: flex;
+    justify-content: center;
+}
+
+.webcam-btn button{
     padding: 10px 15px;
     background-color: var(--green);
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    margin: 5px;
 }
 
-.webcam-popup p{
-    color: white;
-}
-
-.webcam-popup button:hover{
+.webcam-btn button:hover{
     background-color: var(--green-l);
+}
+
+.web-emo p{
+    text-align: center;
+    color: white;
+    margin: 5px;
 }
 
 .chatbot-container {

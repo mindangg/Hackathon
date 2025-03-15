@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import Webcam from 'react-webcam';
 import Lottie from 'react-lottie-player';
-import talkingAnimation from '../animations/avatar.json'; // Import Lottie JSON
+import talkingAnimation from '../animations/avatar.json';
 import '../styles/Chatbot.css';
 
 export default function Chatbot() {
@@ -12,11 +11,10 @@ export default function Chatbot() {
     const [input, setInput] = useState('');
     const [showWebcam, setShowWebcam] = useState(true);
     const [emotion, setEmotion] = useState('');
-    const [isSpeaking, setIsSpeaking] = useState(false); // Control animation
+    const [isSpeaking, setIsSpeaking] = useState(false);
     const webcamRef = useRef(null);
     const messagesEndRef = useRef(null);
     const latestMessageRef = useRef(null);
-    
 
     const startListening = () => {
         setInput('');
@@ -38,12 +36,12 @@ export default function Chatbot() {
         if (!text || text === latestMessageRef.current) return;
         latestMessageRef.current = text;
 
-        setIsSpeaking(true); // Start talking animation
+        setIsSpeaking(true);
 
         const speech = new SpeechSynthesisUtterance(text);
         speech.lang = 'en-US';
 
-        speech.onend = () => setIsSpeaking(false); // Stop animation when done
+        speech.onend = () => setIsSpeaking(false);
 
         speechSynthesis.speak(speech);
     };
@@ -55,19 +53,19 @@ export default function Chatbot() {
         const blob = await fetch(imageSrc).then(res => res.blob());
     
         const formData = new FormData();
-        formData.append("file", blob, "image.jpg");
+        formData.append('file', blob, 'image.jpg');
     
         try {
-            const response = await fetch("http://localhost:5000/analyze-emotion", {
-                method: "POST",
+            const response = await fetch('http://localhost:5000/analyze-emotion', {
+                method: 'POST',
                 body: formData,
             });
     
             const data = await response.json();
-            console.log("Full API Response:", data); // Debugging log
+            console.log('Full API Response:', data);
     
-            const detectedEmotion = data.dominant_emotion || "unknown";
-            console.log("Emotion detected:", detectedEmotion);
+            const detectedEmotion = data.dominant_emotion || 'unknown';
+            console.log('Emotion detected:', detectedEmotion);
     
             if (detectedEmotion) {
                 setEmotion(detectedEmotion);
@@ -77,7 +75,7 @@ export default function Chatbot() {
                 ]);
             }
         } catch (error) {
-            console.error("Error analyzing emotion:", error);
+            console.error('Error analyzing emotion:', error);
         }
     };
     
@@ -106,7 +104,7 @@ export default function Chatbot() {
                 { sender: 'Therapist', text: json.response }
             ]);
 
-            speakText(json.sentiment_response); // Make avatar speak
+            speakText(json.sentiment_response);
         }
         catch (error) {
             console.error('Error sending message:', error);
@@ -129,20 +127,24 @@ export default function Chatbot() {
     return (
         <div className='chatbot-container'>
 
-            <div className="chatbot-avatar">
+            <div className='chatbot-avatar'>
                 <Lottie
                     loop
                     animationData={talkingAnimation}
-                    play={isSpeaking} // Play animation when speaking
+                    play={isSpeaking}
                     style={{ width: 500, height: 500 }}
                 />
             </div>
 
             {showWebcam && (
                 <div className='webcam-popup'>
-                    <Webcam ref={webcamRef} screenshotFormat="image/jpeg" width={300} height={180} />
-                    <button onClick={captureAndAnalyzeEmotion}>Analyze Emotion</button>
-                    <p>Detected Emotion: {emotion || "Unknown"}</p>
+                    <Webcam ref={webcamRef} screenshotFormat='image/jpeg' width={300} height={180} />
+                    <div className='webcam-btn'>
+                        <button onClick={captureAndAnalyzeEmotion}>Analyze Emotion</button>
+                    </div>
+                    <div className='web-emo'>
+                        <p>Detected Emotion: {emotion || 'Unknown'}</p>
+                    </div>
                 </div>
             )}
 

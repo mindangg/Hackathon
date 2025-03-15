@@ -11,9 +11,9 @@ export default function Header() {
     const { user } = useAuthContext()
     const { logout } = useLogout()
     return (
-        <header id='header'>
+        <header>
             <div className='nav-bar'>
-                <div className='Text-icon'>
+                <div className='text-icon'>
                     <Link to='/'>HealthShark</Link>
                 </div>
                 <div className='attribute-nav-bar'>

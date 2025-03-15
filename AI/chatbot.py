@@ -17,7 +17,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -136,10 +136,6 @@ response_dict = {
 @app.post("/analyze")
 async def chat_response(request: MessageRequest):
     emotion_result = emotion_pipeline(request.message)[0]
-    # label = sentiment_result['label'].upper()
-    # score = sentiment_result['score']
-    # category = f"{label}_{'HIGH' if score > 0.9 else 'LOW'}"
-    # sentiment_response = random.choice(response_dict.get(category, ["I'm here for you."]))
 
     label = emotion_result['label'].lower()
     response = random.choice(response_dict.get(label, ["I'm here for you."]))
@@ -149,11 +145,6 @@ async def chat_response(request: MessageRequest):
         "confidence": emotion_result['score'],
         "response": response
     }
-    # return {
-    #     "sentiment": label,
-    #     "confidence": score,
-    #     "sentiment_response": sentiment_response
-    # }
 
 @app.post("/speech-to-text")
 async def speech_to_text(file: UploadFile = File(...)):

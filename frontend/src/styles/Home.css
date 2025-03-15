@@ -1,11 +1,11 @@
-.HOME {
+.home {
   display: flex;
   flex-direction: column;
-  align-items: center; /* Căn giữa theo chiều ngang */
-  justify-content: center; /* Căn giữa theo chiều dọc */
-  height: 100%; /* Chiếm 70% chiều cao màn hình */
+  align-items: center;
+  justify-content: center;
+  height: 100%;
   text-align: center;
-  gap: 10px; /* Tạo khoảng cách giữa các phần tử */
+  gap: 10px;
 }
 @keyframes floating {
   0% {
@@ -18,30 +18,28 @@
     transform: translateY(0px);
   }
 }
-.HOME img {
-  width: 350px; /* Giảm kích thước logo để tránh lấn màn hình */
+.home img {
+  width: 350px;
   height: auto;
-  object-fit: contain; /* Đảm bảo ảnh không bị kéo giãn */
+  object-fit: contain;
   filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.3));
   transition: transform 0.3s ease-in-out;
   animation: floating 3s infinite ease-in-out;
 }
 
-.HOME h1 {
+.home h1 {
   color: #25beb3;
-  font-family: "Poppins", sans-serif;
   font-size: 2.2rem;
-  margin: 5px 0; /* Giảm khoảng cách thừa */
+  margin: 5px 0;
   text-shadow: 2px 10px 10px rgba(0, 0, 0, 0.2);
 }
 
-.HOME p {
-  font-family: "Poppins", sans-serif;
+.home p {
   text-align: center;
   max-width: 600px;
   font-size: 0.75rem;
   line-height: 1.5;
-  margin: 5px 20px; /* Cân đối khoảng cách */
+  margin: 5px 20px;
   color: #333;
   background: rgba(255, 255, 255, 0.3);
   padding: 10px;
@@ -49,8 +47,7 @@
   backdrop-filter: blur(5px);
   box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
 }
-#button {
-  font-family: "Poppins", sans-serif;
+.action-button {
   font-size: 2rem;
   margin-top: 50px;
   display: flex;
@@ -59,7 +56,8 @@
   justify-content: center;
   gap: 10px;
 }
-#button a {
+
+.action-button a {
   text-decoration: none;
   border-radius: 50px;
 }
@@ -72,6 +70,7 @@
   transition: transform 0.2s ease-in-out, box-shadow 0.3s;
   box-shadow: 0px 5px 0px #7bd8d1, 0px 0px 15px rgba(0, 255, 200, 0.7);
 }
+
 .nav-2 {
   background-color: #7bd8d1;
   color: #09504b;
@@ -79,18 +78,19 @@
   transition: transform 0.2s ease-in-out, box-shadow 0.3s;
   box-shadow: 0px 5px 0px #09504b, 0px 0px 15px rgba(0, 255, 200, 0.7);
 }
-#button a:hover {
+
+.action-button a:hover {
   transform: scale(1.05);
   box-shadow: 0px 7px 10px rgba(0, 0, 0, 0.2), 0px 0px 20px rgba(0, 255, 200, 1);
 }
-#button a:active {
+
+.action-button a:active {
   transform: translateY(3px);
   box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.2);
 }
 
 .service {
   text-align: center;
-  font-family: "Poppins", sans-serif;
   font-size: 50px;
   filter: drop-shadow(3px 5px 5px rgba(0, 0, 0, 0.3));
   box-shadow: 1px 5px 10px rgba(0, 0, 0, 0.2);
@@ -145,12 +145,15 @@
   transform: scale(1.02);
   box-shadow: 0px 0px 30px rgba(255, 200, 0, 1);
 }
+
 .clover{
   filter: drop-shadow(3px 3px 5px rgba(0, 0, 0, 0.7));
 }
+
 .pills{
   filter: drop-shadow(3px 3px 5px rgba(0, 0, 0, 0.7));
 }
+
 .meal{
   filter: drop-shadow(3px 3px 5px rgba(0, 0, 0, 0.7));
 }
