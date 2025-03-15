@@ -1,14 +1,30 @@
-from transformers import pipeline  
+from transformers import pipeline
 import random
-
-from fastapi import FastAPI # type: ignore
+import whisper
+import speech_recognition as sr
+from fastapi import FastAPI, UploadFile, File
+from pydantic import BaseModel
+from io import BytesIO
+from pydub import AudioSegment
 
 app = FastAPI()
 
 classifier = pipeline("text-classification", model="distilbert-base-uncased-finetuned-sst-2-english")
 
+class MessageRequest(BaseModel):
+    message: str
+
+# Response categories
+response_dict = {
+    "POSITIVE_HIGH": ["That's amazing! Keep it up!", "You're doing great!"],
+    "POSITIVE_LOW": ["That's great to hear!", "Nice! Keep enjoying your day!"],
+    "NEGATIVE_HIGH": ["It sounds like you're struggling. You're not alone.", "Tough times don’t last forever."],
+    "NEGATIVE_LOW": ["I hope things get better soon.", "Try to stay strong. You got this."]
+}
+
 @app.post("/analyze")
-def interpret_sentiment(text):
+def interpret_sentiment(request: MessageRequest):
+    text = request.message
     result = classifier(text)[0]
     label = result['label']
     score = result['score']
@@ -86,6 +102,27 @@ def interpret_sentiment(text):
     else:
         return random.choice(negative_responses) if score > 0.9 else random.choice(moderate_negative_responses)
 
+
+@app.post("/speech-to-text")
+async def speech_to_text(file: UploadFile = File(...)):
+    audio = AudioSegment.from_file(BytesIO(await file.read()), format=file.filename.split(".")[-1])
+    
+    # Convert audio to WAV (required for some speech recognition models)
+    audio = audio.set_channels(1).set_frame_rate(16000)
+    wav_file = BytesIO()
+    audio.export(wav_file, format="wav")
+    
+    # Convert speech to text using Whisper
+    text = whisper_model.transcribe(wav_file.getvalue())['text']
+    
+    return {"transcribed_text": text}
+
+
 # # Test
 # text_input = input("How are you feeling: ")
 # print(interpret_sentiment(text_input))
+
+# Run the server (if not using uvicorn)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=5000, reload=True)

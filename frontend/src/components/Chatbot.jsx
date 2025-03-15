@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import '../styles/Chatbot.css'
 
 export default function Chatbot() {
@@ -6,10 +6,10 @@ export default function Chatbot() {
         { sender: 'Therapist', text: 'Hello! How are you feeling today?' },
     ])
     const [input, setInput] = useState('')
+    const messagesEndRef = useRef(null)
 
     const handleSend = async () => {
-        if (input.trim() === '') 
-            return
+        if (input.trim() === '') return
 
         setMessages([...messages, { sender: 'You', text: input }])
 
@@ -23,11 +23,7 @@ export default function Chatbot() {
             })
 
             const json = await response.json()
-
-            console.log(json)
-
-            setMessages(prevMessages => [...prevMessages, { sender: 'Therapist', text: json.reply }])
-
+            setMessages(prevMessages => [...prevMessages, { sender: 'Therapist', text: json }])
         } 
         catch (error) {
             console.error('Error sending message:', error)
@@ -35,6 +31,11 @@ export default function Chatbot() {
 
         setInput('')
     }
+
+    // Tự động cuộn xuống tin nhắn mới nhất
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, [messages])
 
     return (
         <div className='chatbot-container'>
@@ -45,6 +46,7 @@ export default function Chatbot() {
                         <p>{msg.text}</p>
                     </div>
                 ))}
+                <div ref={messagesEndRef} /> {/* Phần tử rỗng để cuộn xuống */}
             </div>
 
             <div className='chatbot-input'>
