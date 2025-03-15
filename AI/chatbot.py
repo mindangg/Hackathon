@@ -8,8 +8,20 @@ from io import BytesIO
 from pydub import AudioSegment
 from gtts import gTTS
 from fastapi.responses import FileResponse
+import cv2
+import numpy as np
+from fastapi.middleware.cors import CORSMiddleware
+from deepface import DeepFace
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 classifier = pipeline("text-classification", model="distilbert-base-uncased-finetuned-sst-2-english")
 whisper_model = whisper.load_model("base")
@@ -120,6 +132,33 @@ async def text_to_speech(request: MessageRequest):
     tts.save(audio_path)
     return FileResponse(audio_path, media_type="audio/mpeg", filename="response.mp3")
 
+@app.post("/analyze-emotion")
+@app.post("/analyze-emotion")
+async def analyze_emotion(file: UploadFile = File(...)):
+    try:
+        # Read the image file
+        image_data = await file.read()
+        np_image = np.frombuffer(image_data, np.uint8)
+        image = cv2.imdecode(np_image, cv2.IMREAD_COLOR)
+
+        # Convert BGR to RGB for DeepFace
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        # Analyze facial emotion
+        analysis = DeepFace.analyze(
+            image, actions=['emotion'], enforce_detection=False, detector_backend="mtcnn"
+        )
+
+        # Extract the dominant emotion
+        if isinstance(analysis, list) and len(analysis) > 0:
+            dominant_emotion = analysis[0]['dominant_emotion']
+            return {"emotion": dominant_emotion}
+        else:
+            return {"error": "No face detected"}
+
+    except Exception as e:
+        return {"error": str(e)}
+    
 
 # # Test
 # text_input = input("How are you feeling: ")

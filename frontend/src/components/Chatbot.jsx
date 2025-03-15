@@ -8,11 +8,13 @@ export default function Chatbot() {
     ]);
     const [input, setInput] = useState('');
     const [showWebcam, setShowWebcam] = useState(false);
+    const [emotion, setEmotion] = useState('');
+    const webcamRef = useRef(null);
     const messagesEndRef = useRef(null);
 
     // Speech-to-Text
     const startListening = () => {
-        setInput('')
+        setInput('');
         const recognition = new window.webkitSpeechRecognition() || new window.SpeechRecognition();
         recognition.lang = 'en-US';
         recognition.start();
@@ -34,10 +36,44 @@ export default function Chatbot() {
         speechSynthesis.speak(speech);
     };
 
+    // Capture and Analyze Facial Emotion
+    const captureAndAnalyzeEmotion = async () => {
+        if (!webcamRef.current) return;
+    
+        const imageSrc = webcamRef.current.getScreenshot();
+        const blob = await fetch(imageSrc).then(res => res.blob());
+    
+        const formData = new FormData();
+        formData.append("file", blob, "image.jpg");
+    
+        try {
+            const response = await fetch("http://localhost:5000/analyze-emotion", {
+                method: "POST",
+                body: formData,
+            });
+    
+            const data = await response.json();
+            console.log("Emotion detected:", data.emotion);
+    
+            if (data.emotion) {
+                setEmotion(prevEmotion => data.emotion);  // Ensure state updates properly
+    
+                setMessages(prevMessages => [
+                    ...prevMessages, 
+                    { sender: 'Therapist', text: `I see you're feeling ${data.emotion}. Let's talk about it.` }
+                ]);
+    
+                speakText(`I see you're feeling ${data.emotion}. Let's talk about it.`);
+            }
+        } catch (error) {
+            console.error("Error analyzing emotion:", error);
+        }
+    };
+
     const handleSend = async () => {
         if (input.trim() === '') return;
         
-        if (!showWebcam) setShowWebcam(true); // Show webcam on first interaction
+        if (!showWebcam) setShowWebcam(true);
 
         setMessages([...messages, { sender: 'You', text: input }]);
 
@@ -53,7 +89,7 @@ export default function Chatbot() {
             const json = await response.json();
             setMessages(prevMessages => {
                 const newMessages = [...prevMessages, { sender: 'Therapist', text: json.response }];
-                speakText(json.response); // Speak the chatbot response
+                speakText(json.response);
                 return newMessages;
             });
         } 
@@ -64,7 +100,6 @@ export default function Chatbot() {
         setInput('');
     };
 
-    // Auto-scroll to latest message
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
@@ -73,7 +108,9 @@ export default function Chatbot() {
         <div className='chatbot-container'>
             {showWebcam && (
                 <div className='webcam-popup'>
-                    <Webcam width={300} height={180} />
+                    <Webcam ref={webcamRef} screenshotFormat="image/jpeg" width={300} height={180} />
+                    <button onClick={captureAndAnalyzeEmotion}>Analyze Emotion</button>
+                    <p>Detected Emotion: {emotion || "Unknown"}</p>
                 </div>
             )}
             <div className='chatbot-messages'>
@@ -83,7 +120,7 @@ export default function Chatbot() {
                         <p>{msg.text}</p>
                     </div>
                 ))}
-                <div ref={messagesEndRef} /> {/* Empty element for auto-scroll */}
+                <div ref={messagesEndRef} />
             </div>
 
             <div className='chatbot-input'>
@@ -94,7 +131,7 @@ export default function Chatbot() {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                 />
-                <button onClick={startListening}>🎤</button> {/* Speech-to-Text */}
+                <button onClick={startListening}>🎤</button>
                 <button onClick={handleSend}>Send</button>
             </div>
         </div>
