@@ -1,240 +1,199 @@
-from transformers import pipeline, AutoModelForCausalLM, AutoTokenizer
-import torch
-import whisper
-import speech_recognition as sr
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from pydantic import BaseModel
-from io import BytesIO
-from pydub import AudioSegment
-from gtts import gTTS
-from fastapi.responses import FileResponse
-import cv2
-import numpy as np
 from fastapi.middleware.cors import CORSMiddleware
-from deepface import DeepFace
+from fastapi.responses import FileResponse
+import torch
+import random
+import whisper
+from gtts import gTTS
 import os
 import tempfile
-import logging
-
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+import cv2
+import numpy as np
+from deepface import DeepFace
+from transformers import pipeline
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Load whisper model
-try:
-    whisper_model = whisper.load_model("base")
-    logger.info("Whisper model loaded successfully")
-except Exception as e:
-    logger.error(f"Error loading whisper model: {e}")
-    whisper_model = None
+# Load models
+whisper_model = whisper.load_model("base")
 
-# Use a simpler model that doesn't require authentication and has lower hardware requirements
-# Options: "facebook/opt-350m", "gpt2", "EleutherAI/gpt-neo-125M", "bigscience/bloom-560m"
-MODEL_NAME = "facebook/opt-350m"  # This is much smaller than Llama-2-7b
-
-# Initialize model variables
-tokenizer = None
-model = None
-text_generation_pipeline = None
-
-# Try to load the model
-try:
-    logger.info(f"Loading simpler model: {MODEL_NAME}")
-    
-    # You can use a pipeline for simpler models
-    text_generation_pipeline = pipeline(
-        "text-generation", 
-        model=MODEL_NAME,
-        device_map="auto" if torch.cuda.is_available() else "cpu",
-        torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32
-    )
-    logger.info(f"Model {MODEL_NAME} loaded successfully")
-except Exception as e:
-    logger.error(f"Error loading model {MODEL_NAME}: {e}")
-    # Try to fall back to even simpler model
-    try:
-        logger.info("Trying fallback to GPT-2 model")
-        MODEL_NAME = "gpt2"
-        text_generation_pipeline = pipeline(
-            "text-generation", 
-            model=MODEL_NAME,
-            device_map="auto" if torch.cuda.is_available() else "cpu"
-        )
-        logger.info("GPT-2 model loaded successfully")
-    except Exception as e2:
-        logger.error(f"Error loading fallback model: {e2}")
+emotion_pipeline = pipeline("text-classification", model="bhadresh-savani/distilbert-base-uncased-emotion")
 
 class MessageRequest(BaseModel):
     message: str
 
+response_dict = {
+    "joy": [
+        "That's amazing! Keep spreading positivity!", 
+        "You sound happy! What's making your day great?",
+        "Happiness is contagious! Tell me what’s bringing you joy today.",
+        "That’s wonderful! Savor the good moments.",
+        "I love hearing that! What’s something exciting happening for you?",
+        "It's great to hear you’re feeling happy! Anything in particular that made your day?",
+        "Keep smiling! The world needs more joy.",
+        "Sounds like a great day! What’s been the highlight so far?",
+        "Good vibes all around! Want to share what’s making you so cheerful?",
+        "Happiness suits you! What’s been going well lately?",
+        "That’s such a positive thing to hear! What’s bringing you so much joy?",
+        "You deserve happiness! What’s something you’re looking forward to?",
+        "Your happiness shines through! I’d love to hear what’s making you smile.",
+        "Life’s little joys are worth celebrating! What’s making you feel this way?",
+        "It’s great to see you happy! What’s one thing that brought you joy today?"
+    ],
+    "sadness": [
+        "I'm here for you. Want to talk about it?", 
+        "It's okay to feel sad sometimes. You're not alone.",
+        "I hear you. If you need someone to listen, I'm here.",
+        "It’s completely okay to feel down. I’m here to support you.",
+        "Would you like to talk about what’s on your mind?",
+        "You are not alone in this. I’m here whenever you want to share.",
+        "If it helps, I can listen. No pressure, just support.",
+        "Sometimes, just talking about it can make a difference. I’m here.",
+        "I wish I could give you a big hug right now. You’re not alone.",
+        "You’re stronger than you think. I believe in you.",
+        "I know it’s tough right now, but brighter days are ahead.",
+        "Your feelings are valid. I’m here to support you however I can.",
+        "You’re doing your best, and that’s enough. I’m here for you.",
+        "I understand how heavy sadness can feel. You don’t have to carry it alone.",
+        "Lean on me whenever you need. You don’t have to go through this alone."
+    ],
+    "anger": [
+        "I see you're upset. Do you want to share what's bothering you?", 
+        "It's okay to feel angry. Let's try to find a solution together.",
+        "Anger is a valid feeling. What happened?",
+        "I hear your frustration. Want to vent?",
+        "It’s okay to feel this way. I’m here to listen without judgment.",
+        "Do you want to talk about it or find ways to cool down? Either way, I’m here.",
+        "What’s on your mind? Sometimes putting feelings into words helps.",
+        "Anger can be tough to deal with, but I’m here to help you through it.",
+        "If you need to express how you feel, I’m here for you.",
+        "I understand that things can get frustrating. You’re not alone in this.",
+        "I can see that something really upset you. Do you want to work through it together?",
+        "Anger is a natural response. Let’s take a deep breath and talk it out.",
+        "Would you like to focus on solutions or just vent for now? I’m here for either.",
+        "It’s okay to feel this way. How can I help make things a little better?",
+        "You don’t have to deal with this alone. I’m here to listen and support you."
+    ],
+    "surprise": [
+        "That sounds unexpected! What happened?", 
+        "Wow! That must have been a shock!",
+        "That sounds like quite the twist! Want to tell me more?",
+        "Unexpected moments can be exciting! What’s going on?",
+        "Whoa! That must have caught you off guard. How do you feel about it?",
+        "Surprises can be thrilling or overwhelming. Which one is this for you?",
+        "I wasn’t expecting that either! Tell me more!",
+        "Did this surprise make your day better or more complicated?",
+        "I love surprises! Unless they’re the bad kind. Which one was this?",
+        "Life has a way of throwing curveballs! How are you feeling about it?",
+        "Surprises keep life interesting! Was this a good one or a challenging one?",
+        "Wow! That must have been a moment to remember. What happened?",
+        "Not every day brings surprises! How did this one make you feel?",
+        "A twist in the story! Was it a happy or shocking surprise?",
+        "Tell me more! I’d love to hear how this surprise unfolded."
+    ],
+    "fear": [
+        "That sounds scary. Want to talk about it?", 
+        "It's okay to be afraid. You're safe here.",
+        "Fear is a natural response. What’s making you feel this way?",
+        "You don’t have to face this alone. I’m here.",
+        "Sometimes talking about our fears can make them feel smaller. Want to share?",
+        "I hear you. Fear can be overwhelming, but you’re not alone.",
+        "Take a deep breath. I’m right here with you.",
+        "It’s okay to be scared. Do you want to talk through it?",
+        "I want to help you feel safe. What’s on your mind?",
+        "You’re stronger than your fears. I believe in you.",
+        "Fear can feel paralyzing, but you don’t have to face it alone.",
+        "Let’s take this one step at a time. I’m right here with you.",
+        "You’re in a safe space. Tell me what’s on your mind.",
+        "I understand why this feels scary. Let’s talk through it together.",
+        "Courage doesn’t mean the absence of fear; it means facing it. You’ve got this."
+    ],
+    "disgust": [
+        "That doesn't sound pleasant. What happened?", 
+        "I get that. Some things can be really off-putting.",
+        "That sounds really unpleasant. Do you want to share more about it?",
+        "I understand why you’d feel that way. What’s going on?",
+        "It’s okay to feel disgusted. Some things just don’t sit right.",
+        "Ugh, that doesn’t sound great at all. Tell me about it.",
+        "I can imagine how that would be upsetting. What happened?",
+        "Some things just don’t feel right. Want to talk about it?",
+        "Your feelings are valid. What made you feel this way?",
+        "I totally get that. Some things are just hard to deal with.",
+        "That must have been really unpleasant! Do you want to vent about it?",
+        "Yikes! That doesn’t sound fun at all. What happened?"
+    ]
+}
+
 @app.post("/analyze")
-async def interpret_sentiment(request: MessageRequest):
-    if text_generation_pipeline is None:
-        raise HTTPException(status_code=503, detail="Language model not available")
-    
-    text = request.message
-    logger.info(f"Received message: {text[:50]}...")
-    
-    try:
-        # Generate response with the simpler model
-        response = text_generation_pipeline(
-            text,
-            max_length=100,
-            temperature=0.7,
-            top_p=0.9,
-            do_sample=True,
-            num_return_sequences=1
-        )
-        
-        # Extract generated text
-        generated_text = response[0]['generated_text']
-        
-        # Remove the input prompt from the response
-        response_text = generated_text[len(text):].strip()
-        
-        # If the response is empty, return a default message
-        if not response_text:
-            response_text = "I'm sorry, I couldn't generate a proper response. Please try again."
-        
-        logger.info(f"Generated response: {response_text[:50]}...")
-        return {"response": response_text}
-    except Exception as e:
-        logger.error(f"Error generating response: {e}")
-        raise HTTPException(status_code=500, detail=f"Error generating response: {str(e)}")
+async def chat_response(request: MessageRequest):
+    emotion_result = emotion_pipeline(request.message)[0]
+    # label = sentiment_result['label'].upper()
+    # score = sentiment_result['score']
+    # category = f"{label}_{'HIGH' if score > 0.9 else 'LOW'}"
+    # sentiment_response = random.choice(response_dict.get(category, ["I'm here for you."]))
+
+    label = emotion_result['label'].lower()
+    response = random.choice(response_dict.get(label, ["I'm here for you."]))
+
+    return {
+        "emotion": label,
+        "confidence": emotion_result['score'],
+        "response": response
+    }
+    # return {
+    #     "sentiment": label,
+    #     "confidence": score,
+    #     "sentiment_response": sentiment_response
+    # }
 
 @app.post("/speech-to-text")
 async def speech_to_text(file: UploadFile = File(...)):
-    if whisper_model is None:
-        raise HTTPException(status_code=503, detail="Whisper model not available")
-    
-    try:
-        # Read audio file
-        content = await file.read()
-        
-        # Save to a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file.filename.split('.')[-1]}") as temp_file:
-            temp_file.write(content)
-            temp_path = temp_file.name
-        
-        # Convert to compatible format if needed
-        audio = AudioSegment.from_file(temp_path)
-        audio = audio.set_channels(1).set_frame_rate(16000)
-        
-        # Save as wav
-        wav_path = f"{temp_path}.wav"
-        audio.export(wav_path, format="wav")
-        
-        # Transcribe
-        result = whisper_model.transcribe(wav_path)
-        text = result["text"]
-        
-        # Clean up temporary files
-        os.unlink(temp_path)
-        os.unlink(wav_path)
-        
-        return {"transcribed_text": text}
-    except Exception as e:
-        logger.error(f"Error processing audio: {e}")
-        raise HTTPException(status_code=500, detail=f"Error processing audio: {str(e)}")
+    content = await file.read()
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
+        temp_file.write(content)
+        temp_path = temp_file.name
+    text = whisper_model.transcribe(temp_path)["text"]
+    os.unlink(temp_path)
+    return {"transcribed_text": text}
 
 @app.post("/text-to-speech")
 async def text_to_speech(request: MessageRequest):
-    try:
-        text = request.message
-        
-        # Create a temporary file for the audio
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
-            audio_path = temp_file.name
-        
-        # Generate speech
-        tts = gTTS(text, lang="en")
-        tts.save(audio_path)
-        
-        # Return the audio file with cleanup
-        return FileResponse(
-            audio_path, 
-            media_type="audio/mpeg", 
-            filename="response.mp3",
-            background=BackgroundTask(lambda: os.unlink(audio_path))
-        )
-    except Exception as e:
-        logger.error(f"Error generating speech: {e}")
-        raise HTTPException(status_code=500, detail=f"Error generating speech: {str(e)}")
+    tts = gTTS(request.message, lang="en")
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
+        audio_path = temp_file.name
+    tts.save(audio_path)
+    return FileResponse(audio_path, media_type="audio/mpeg", filename="response.mp3")
 
 @app.post("/analyze-emotion")
 async def analyze_emotion(file: UploadFile = File(...)):
     try:
-        # Read the image file
+        # Read the uploaded image
         image_data = await file.read()
-        np_image = np.frombuffer(image_data, np.uint8)
-        image = cv2.imdecode(np_image, cv2.IMREAD_COLOR)
-        
+        image = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
+
         if image is None:
-            raise HTTPException(status_code=400, detail="Invalid image format")
-        
-        # Convert BGR to RGB for DeepFace
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        
-        # Try multiple backends if one fails
-        backends = ["opencv", "ssd", "retinaface", "mtcnn", "mediapipe"]
-        
-        for backend in backends:
-            try:
-                analysis = DeepFace.analyze(
-                    image, 
-                    actions=['emotion'], 
-                    enforce_detection=False, 
-                    detector_backend=backend
-                )
-                
-                # Check if analysis was successful
-                if isinstance(analysis, list) and len(analysis) > 0:
-                    emotion_data = analysis[0]['emotion']
-                    dominant_emotion = analysis[0]['dominant_emotion']
-                    
-                    # Return both the dominant emotion and the full emotion scores
-                    return {
-                        "dominant_emotion": dominant_emotion,
-                        "emotion_scores": emotion_data,
-                        "backend_used": backend
-                    }
-                
-            except Exception as backend_error:
-                logger.warning(f"Backend {backend} failed: {str(backend_error)}")
-                continue
-        
-        # If all backends failed
-        raise HTTPException(status_code=422, detail="No face could be detected in the image")
-        
+            raise HTTPException(status_code=400, detail="Invalid image file")
+
+        # Perform emotion analysis
+        analysis = DeepFace.analyze(image, actions=['emotion'], enforce_detection=False)[0]
+
+        # Convert NumPy float32 to Python float for JSON serialization
+        emotion_scores = {k: float(v) for k, v in analysis.get("emotion", {}).items()}
+        dominant_emotion = analysis.get("dominant_emotion", "unknown")
+
+        return {
+            "dominant_emotion": dominant_emotion,
+            "emotion_scores": emotion_scores
+        }
+
     except Exception as e:
-        logger.error(f"Error analyzing emotion: {e}")
-        raise HTTPException(status_code=500, detail=f"Error analyzing emotion: {str(e)}")
-
-# Add a health check endpoint
-@app.get("/health")
-async def health_check():
-    status = {
-        "language_model": text_generation_pipeline is not None,
-        "model_name": MODEL_NAME if text_generation_pipeline is not None else "None",
-        "whisper_model": whisper_model is not None,
-    }
-    return status
-
-# Import here to avoid circular imports
-# from fastapi.background import BackgroundTask
-
-# Run the server (if not using uvicorn)
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5000, reload=True)
-
+        raise HTTPException(status_code=500, detail=str(e))

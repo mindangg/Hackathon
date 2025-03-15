@@ -1,27 +1,25 @@
 #header {
-  position: fixed;  /* Cố định navbar */
-  top: 0;  /* Cách top 10px */
+  position: fixed;
+  top: 1px;
   left: 50%;
-  transform: translateX(-50%); /* Căn giữa navbar */
-  width: calc(100% - 400px); /* Điều chỉnh chiều rộng theo margin */
+  transform: translateX(-50%);
+  width: calc(100% - 400px);
   padding: 15px 50px;
   background-color: #25beb3;
   border-radius: 50px;
   display: flex;
   justify-content: center;
-  z-index: 1000; /* Giúp navbar luôn nổi trên các phần khác */
+  z-index: 1000;
   box-shadow: 0px 5px 0px #09504b, 0px 0px 15px rgba(0, 255, 200, 0.7);
 }
 
-/* Thêm padding-top vào body để tránh nội dung bị che */
 body {
-  padding-top: 80px; /* Điều chỉnh theo chiều cao navbar */
+  padding-top: 80px;
 }
-
 
 .nav-bar {
   display: flex;
-  justify-content: space-between; /* Đẩy "HealthShark" về trái, các link còn lại về phải */
+  justify-content: space-between;
   align-items: center;
   font-family: "Poppins", sans-serif;
   width: 100%;
@@ -36,7 +34,7 @@ body {
 
 .attribute-nav-bar {
   display: flex;
-  gap: 20px; /* Tạo khoảng cách giữa các thẻ <a> */
+  gap: 20px;
 }
 
 .attribute-nav-bar a {
@@ -44,8 +42,6 @@ body {
   color: whitesmoke;
   font-size: 18px;
   font-weight: bold;
-  /* border: 1px solid whitesmoke;
-  border-radius: 50px; */
   position: relative;
   margin: 0 10px;
 }
