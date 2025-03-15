@@ -1,0 +1,38 @@
+#header {
+    padding: 15px 30px;
+    margin-left: 200px;
+    margin-right: 200px;
+    background-color: #25beb3;
+    border-radius: 50px;
+    justify-content: center;
+  }
+  
+  .nav-bar {
+    display: flex;
+    justify-content: space-between; /* Đẩy "HealthShark" về trái, các link còn lại về phải */
+    align-items: center;
+    font-family: "Poppins", sans-serif;
+    width: 100%;
+  }
+  
+  .Text-icon a {
+    text-decoration: none;
+    font-size: 20px;
+    font-weight: bold;
+    color: whitesmoke;
+  }
+  
+  .attribute-nav-bar {
+    display: flex;
+    gap: 20px; /* Tạo khoảng cách giữa các thẻ <a> */
+  }
+  
+  .attribute-nav-bar a {
+    text-decoration: none;
+    color: whitesmoke;
+    font-weight: bold;
+    padding: 5px 10px;
+    border: 1px solid whitesmoke;
+    border-radius: 50px;
+  }
+  

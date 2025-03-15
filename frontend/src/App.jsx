@@ -7,11 +7,13 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 
 import Chatbot from './components/Chatbot'
+import Header from './components/Header'
 
 export default function App() {
     return (
       <div className='App'>
         <BrowserRouter>
+        <Header/>
           <Routes>
             <Route path='/' element={<Home/>}/>
             <Route path='/login' element={<Login/>}/>
