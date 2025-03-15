@@ -25,170 +25,136 @@ app.add_middleware(
 
 # Load models
 whisper_model = whisper.load_model("base")
-sentiment_pipeline = pipeline("sentiment-analysis")
+# sentiment_pipeline = pipeline("sentiment-analysis")
+
+emotion_pipeline = pipeline("text-classification", model="bhadresh-savani/distilbert-base-uncased-emotion")
 
 class MessageRequest(BaseModel):
     message: str
 
 response_dict = {
-    "POSITIVE_HIGH": [
-        "That's amazing, try to keep it up!", "You’re doing great, keep pushing forward!", "I love that energy! Stay positive!", 
-        "Happiness looks good on you!", "Keep up the good vibes!", "Wow, that's fantastic news!", "Glad to hear that! Keep going strong!", 
-        "Your positivity is contagious!", "Awesome! Keep shining!", "That's the spirit! Keep it up!", 
-        "You're truly inspiring!", "Stay strong and keep smiling!", "That’s wonderful to hear!", "You’re on the right path!", 
-        "Every day is a new chance to shine!", "You are full of positive energy!", "Keep that fire burning!", "You deserve happiness!", 
-        "Your attitude is admirable!", "Happiness is your natural state!", "Positivity looks great on you!", "You’re an inspiration!", 
-        "Your enthusiasm is infectious!", "Keep being awesome!", "You make the world brighter!", "Success follows positivity!", 
-        "Your happiness is your superpower!", "Every day is a blessing!", "Your mindset is incredible!", "Nothing can stop you!", 
-        "Great things are coming your way!", "Your joy is limitless!", "You're living your best life!", "Shine on!", 
-        "Happiness is a choice, and you chose well!", "Radiate good vibes!", "You deserve all the good in life!", 
-        "Enjoy every moment!", "Keep aiming high!", "You bring joy to others!", "Your light shines bright!", 
-        "You have a heart full of joy!", "Happiness is your default mode!", "Your optimism is refreshing!", "You were born to thrive!", 
-        "The universe is cheering for you!", "You're glowing with positivity!", "Keep being you!", "You're unstoppable!", "Go get it, champion!",
-        "Your positive outlook will take you far!", "Every day is another opportunity to shine!", "Your energy is magnetic!", 
-        "Stay in this beautiful mindset!", "Good things keep happening to you!", "The world needs more people like you!", 
-        "Your happiness fuels those around you!", "You are an endless source of joy!", "You are radiating success!", 
-        "Life loves you back for all your positivity!", "Keep setting the world on fire with your light!", 
-        "Everything you touch turns into something amazing!", "Your spirit is a beacon of inspiration!", "Happiness is your superpower!", 
-        "Your light is undeniable!", "Keep walking this wonderful path of joy!", "Greatness suits you!", "Your energy transforms everything around you!", 
-        "Every step you take is towards something amazing!", "You make the world a better place just by being you!", "You are proof that happiness wins!", 
-        "You are a bright spark in this world!", "Everything about you radiates positivity!", "Your kindness and joy know no bounds!", 
-        "Keep leading with love and light!", "The universe responds to your amazing energy!", "Your days will only get brighter!"
+    "joy": [
+        "That's amazing! Keep spreading positivity!", 
+        "You sound happy! What's making your day great?",
+        "Happiness is contagious! Tell me what’s bringing you joy today.",
+        "That’s wonderful! Savor the good moments.",
+        "I love hearing that! What’s something exciting happening for you?",
+        "It's great to hear you’re feeling happy! Anything in particular that made your day?",
+        "Keep smiling! The world needs more joy.",
+        "Sounds like a great day! What’s been the highlight so far?",
+        "Good vibes all around! Want to share what’s making you so cheerful?",
+        "Happiness suits you! What’s been going well lately?",
+        "That’s such a positive thing to hear! What’s bringing you so much joy?",
+        "You deserve happiness! What’s something you’re looking forward to?",
+        "Your happiness shines through! I’d love to hear what’s making you smile.",
+        "Life’s little joys are worth celebrating! What’s making you feel this way?",
+        "It’s great to see you happy! What’s one thing that brought you joy today?"
     ],
-
-    "POSITIVE_LOW": [
-        "That's great to hear!", "Nice! Keep enjoying your day!", "Good vibes only!", "That sounds really nice!", "Happy to hear that!", 
-        "Glad things are going well for you!", "Positive energy suits you!", "Keep embracing the good moments!", 
-        "Wishing you more amazing days ahead!", "Stay cheerful and keep spreading happiness!", "Smiling looks good on you!", 
-        "Keep the momentum going!", "A great attitude makes a great day!", "Keep making wonderful memories!", "Enjoy the little things!", 
-        "Keep the good energy flowing!", "Positivity attracts success!", "The best is yet to come!", "Keep up the good work!", 
-        "Today is your day!", "Celebrate the small wins!", "You're making progress!", "Everything is falling into place!", 
-        "Your energy is uplifting!", "You're on a roll!", "Hope your day stays awesome!", "You're making a difference!", 
-        "Be proud of yourself!", "You're moving forward!", "Small joys make big impacts!", "A positive day leads to a positive life!", 
-        "Great things are happening!", "You're stronger than you think!", "Life is good!", "Enjoy every second!", 
-        "Your happiness is contagious!", "You’re spreading joy!", "Life is smiling at you!", "Your success is inspiring!", 
-        "Every day is a fresh start!", "Keep spreading kindness!", "You're full of potential!", "You deserve happiness!", 
-        "You're heading in the right direction!", "Success is just around the corner!", "Your positivity is powerful!", 
-        "You make the world better!", "Your vibe attracts good things!", "You're a source of joy!", "The world needs your light!",
-        "Small steps still lead to big achievements!", "Every effort you make counts!", "Your journey is unfolding beautifully!", 
-        "Every day you are growing into the best version of yourself!", "Little joys add up to a beautiful life!", 
-        "Keep being the amazing person you are!", "You make even an ordinary day feel special!", "Great energy attracts great experiences!", 
-        "Good things keep happening for a reason!", "Life is rewarding your efforts!"
+    "sadness": [
+        "I'm here for you. Want to talk about it?", 
+        "It's okay to feel sad sometimes. You're not alone.",
+        "I hear you. If you need someone to listen, I'm here.",
+        "It’s completely okay to feel down. I’m here to support you.",
+        "Would you like to talk about what’s on your mind?",
+        "You are not alone in this. I’m here whenever you want to share.",
+        "If it helps, I can listen. No pressure, just support.",
+        "Sometimes, just talking about it can make a difference. I’m here.",
+        "I wish I could give you a big hug right now. You’re not alone.",
+        "You’re stronger than you think. I believe in you.",
+        "I know it’s tough right now, but brighter days are ahead.",
+        "Your feelings are valid. I’m here to support you however I can.",
+        "You’re doing your best, and that’s enough. I’m here for you.",
+        "I understand how heavy sadness can feel. You don’t have to carry it alone.",
+        "Lean on me whenever you need. You don’t have to go through this alone."
     ],
-
-    "NEGATIVE_HIGH": [
-        "I can feel that you're going through something really difficult. Please know that you are not alone.",
-        "Sometimes, the weight of the world feels unbearable. Take a deep breath, and know that you are stronger than you think.",
-        "It’s okay to feel overwhelmed. Try to give yourself the same compassion you would give to a friend.",
-        "The storm may feel endless, but even the longest night will eventually meet the dawn.",
-        "You matter, and what you’re feeling is real. Don’t be afraid to reach out for support.",
-        "Even the hardest days will pass. Until then, be kind to yourself.",
-        "Pain is real, but so is hope. Hold onto it, even if it feels small.",
-        "There is strength in seeking help. You don’t have to go through this alone.",
-        "Healing isn’t linear, and it’s okay to have setbacks. Keep going at your own pace.",
-        "You are so much more than this difficult moment. Brighter days are ahead.",
-        "No feeling is permanent. This pain won’t last forever.",
-        "Your emotions are valid, and you have the right to feel and express them.",
-        "Take a moment to pause, breathe, and remind yourself that you are enough.",
-        "You are stronger than you believe, even when everything feels heavy.",
-        "You deserve kindness, especially from yourself.",
-        "Some days are harder than others, but each one brings you closer to healing.",
-        "Try to focus on small things that bring comfort. Even the smallest light can guide you forward.",
-        "You are loved, you are valued, and you are worthy of happiness.",
-        "The road ahead might seem long, but you are not walking it alone.",
-        "Take care of yourself the way you would take care of someone you love.",
-        "You are not broken, and you are not beyond healing.",
-        "Your struggles do not define you. You are so much more.",
-        "Every difficult moment you survive makes you stronger.",
-        "There are people who care about you, even when it doesn’t feel that way.",
-        "You deserve rest, love, and healing.",
-        "Even the smallest step forward is still progress.",
-        "Your presence in this world matters. Never doubt that.",
-        "It’s okay to not have all the answers right now.",
-        "You are resilient. You have faced challenges before and overcome them.",
-        "Tough times don’t last, but your strength does.",
-        "Let yourself feel, but also remind yourself that better days are ahead.",
-        "If today is hard, just focus on getting through this moment.",
-        "Even when you feel alone, there is always hope.",
-        "Your story isn’t over yet. There are still beautiful chapters ahead.",
-        "Be patient with yourself. Healing takes time.",
-        "You are doing the best you can, and that is enough.",
-        "This moment is painful, but it does not define your entire life.",
-        "It’s okay to ask for help. You don’t have to carry everything alone.",
-        "Sometimes, the best thing you can do is take a deep breath and let yourself rest.",
-        "You deserve happiness, even if it feels distant right now.",
-        "There is hope, even in the darkest moments.",
-        "Life is unpredictable, but so is recovery.",
-        "You are doing better than you think, even if it doesn’t feel that way.",
-        "Strength is found in the moments you keep pushing forward.",
-        "You are not alone in this battle, no matter how isolated you feel.",
-        "Give yourself the same patience and love that you would offer to someone else.",
-        "You are worthy of care, of love, and of brighter days ahead."
+    "anger": [
+        "I see you're upset. Do you want to share what's bothering you?", 
+        "It's okay to feel angry. Let's try to find a solution together.",
+        "Anger is a valid feeling. What happened?",
+        "I hear your frustration. Want to vent?",
+        "It’s okay to feel this way. I’m here to listen without judgment.",
+        "Do you want to talk about it or find ways to cool down? Either way, I’m here.",
+        "What’s on your mind? Sometimes putting feelings into words helps.",
+        "Anger can be tough to deal with, but I’m here to help you through it.",
+        "If you need to express how you feel, I’m here for you.",
+        "I understand that things can get frustrating. You’re not alone in this.",
+        "I can see that something really upset you. Do you want to work through it together?",
+        "Anger is a natural response. Let’s take a deep breath and talk it out.",
+        "Would you like to focus on solutions or just vent for now? I’m here for either.",
+        "It’s okay to feel this way. How can I help make things a little better?",
+        "You don’t have to deal with this alone. I’m here to listen and support you."
     ],
-    "NEGATIVE_LOW": [
-        "I hear you, and I hope you find something to bring you peace today.",
-        "It’s okay if things feel off today. Tomorrow might bring something better.",
-        "A rough day doesn’t mean a rough life. Keep going.",
-        "Try to be gentle with yourself today.",
-        "Every day won’t be perfect, but you are still making progress.",
-        "You don’t have to have it all figured out right now.",
-        "Even small acts of self-care can help. Maybe take a walk or listen to your favorite song.",
-        "I know it’s tough, but you are stronger than you realize.",
-        "It’s okay if today isn’t your best. Give yourself permission to rest.",
-        "You deserve kindness, even on the hard days.",
-        "A setback doesn’t erase all the progress you’ve made.",
-        "You have gotten through hard times before, and you will again.",
-        "Your feelings are valid, no matter what they are.",
-        "It’s okay to take things one step at a time.",
-        "Even the smallest victory is still worth celebrating.",
-        "Take a moment to breathe and remind yourself that you are enough.",
-        "Your worth isn’t defined by how you feel today.",
-        "Life is full of ups and downs. Keep holding on.",
-        "Don’t underestimate your own strength.",
-        "You deserve to take a break and focus on yourself.",
-        "Even the heaviest rain eventually stops.",
-        "Your struggles are real, but they are not the end of your story.",
-        "You don’t have to do everything at once. Small steps matter.",
-        "You are capable of finding joy, even on difficult days.",
-        "There is still good in the world, even when it’s hard to see.",
-        "The way you feel right now doesn’t define your future.",
-        "Let yourself rest without guilt.",
-        "It’s okay if today is tough. Be patient with yourself.",
-        "You are more than your struggles.",
-        "Hard days don’t erase all the good ones.",
-        "You are not alone in this.",
-        "You are enough, just as you are.",
-        "Take a deep breath. You’ve got this.",
-        "Your emotions are real, and they matter.",
-        "Healing isn’t always visible, but that doesn’t mean it’s not happening.",
-        "Keep looking for the little things that bring you peace.",
-        "Let yourself hope, even in small ways.",
-        "You deserve happiness, no matter what.",
-        "It’s okay to ask for help when you need it.",
-        "You are not your worst day.",
-        "Things won’t always be like this.",
-        "Every challenge makes you stronger.",
-        "Be patient with your own healing.",
-        "You are doing better than you think.",
-        "Give yourself grace.",
-        "You are loved, even if you don’t feel it right now.",
-        "You are capable of finding light again.",
-        "The best is yet to come."
+    "surprise": [
+        "That sounds unexpected! What happened?", 
+        "Wow! That must have been a shock!",
+        "That sounds like quite the twist! Want to tell me more?",
+        "Unexpected moments can be exciting! What’s going on?",
+        "Whoa! That must have caught you off guard. How do you feel about it?",
+        "Surprises can be thrilling or overwhelming. Which one is this for you?",
+        "I wasn’t expecting that either! Tell me more!",
+        "Did this surprise make your day better or more complicated?",
+        "I love surprises! Unless they’re the bad kind. Which one was this?",
+        "Life has a way of throwing curveballs! How are you feeling about it?",
+        "Surprises keep life interesting! Was this a good one or a challenging one?",
+        "Wow! That must have been a moment to remember. What happened?",
+        "Not every day brings surprises! How did this one make you feel?",
+        "A twist in the story! Was it a happy or shocking surprise?",
+        "Tell me more! I’d love to hear how this surprise unfolded."
+    ],
+    "fear": [
+        "That sounds scary. Want to talk about it?", 
+        "It's okay to be afraid. You're safe here.",
+        "Fear is a natural response. What’s making you feel this way?",
+        "You don’t have to face this alone. I’m here.",
+        "Sometimes talking about our fears can make them feel smaller. Want to share?",
+        "I hear you. Fear can be overwhelming, but you’re not alone.",
+        "Take a deep breath. I’m right here with you.",
+        "It’s okay to be scared. Do you want to talk through it?",
+        "I want to help you feel safe. What’s on your mind?",
+        "You’re stronger than your fears. I believe in you.",
+        "Fear can feel paralyzing, but you don’t have to face it alone.",
+        "Let’s take this one step at a time. I’m right here with you.",
+        "You’re in a safe space. Tell me what’s on your mind.",
+        "I understand why this feels scary. Let’s talk through it together.",
+        "Courage doesn’t mean the absence of fear; it means facing it. You’ve got this."
+    ],
+    "disgust": [
+        "That doesn't sound pleasant. What happened?", 
+        "I get that. Some things can be really off-putting.",
+        "That sounds really unpleasant. Do you want to share more about it?",
+        "I understand why you’d feel that way. What’s going on?",
+        "It’s okay to feel disgusted. Some things just don’t sit right.",
+        "Ugh, that doesn’t sound great at all. Tell me about it.",
+        "I can imagine how that would be upsetting. What happened?",
+        "Some things just don’t feel right. Want to talk about it?",
+        "Your feelings are valid. What made you feel this way?",
+        "I totally get that. Some things are just hard to deal with.",
+        "That must have been really unpleasant! Do you want to vent about it?",
+        "Yikes! That doesn’t sound fun at all. What happened?"
     ]
 }
 
 @app.post("/analyze")
 async def chat_response(request: MessageRequest):
-    sentiment_result = sentiment_pipeline(request.message)[0]
-    label = sentiment_result['label'].upper()
-    score = sentiment_result['score']
-    category = f"{label}_{'HIGH' if score > 0.9 else 'LOW'}"
-    sentiment_response = random.choice(response_dict.get(category, ["I'm here for you."]))
+    emotion_result = emotion_pipeline(request.message)[0]
+    # label = sentiment_result['label'].upper()
+    # score = sentiment_result['score']
+    # category = f"{label}_{'HIGH' if score > 0.9 else 'LOW'}"
+    # sentiment_response = random.choice(response_dict.get(category, ["I'm here for you."]))
+
+    label = emotion_result['label'].lower()
+    response = random.choice(response_dict.get(label, ["I'm here for you."]))
+
     return {
-        "sentiment": label,
-        "confidence": score,
-        "sentiment_response": sentiment_response
+        "emotion": label,
+        "confidence": emotion_result['score'],
+        "response": response
     }
+    # return {
+    #     "sentiment": label,
+    #     "confidence": score,
+    #     "sentiment_response": sentiment_response
+    # }
 
 @app.post("/speech-to-text")
 async def speech_to_text(file: UploadFile = File(...)):

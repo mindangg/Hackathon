@@ -103,7 +103,7 @@ export default function Chatbot() {
             console.log(json)
             setMessages(prevMessages => [
                 ...prevMessages,
-                { sender: 'Therapist', text: json.sentiment_response }
+                { sender: 'Therapist', text: json.response }
             ]);
 
             speakText(json.sentiment_response); // Make avatar speak

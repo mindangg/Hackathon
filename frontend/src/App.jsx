@@ -19,6 +19,7 @@ export default function App() {
             <Route path='/login' element={<Login/>}/>
             <Route path='/signup' element={<Signup/>}/>
             <Route path='/chatbot' element={<Chatbot/>}/>
+            {/* <Route path="/assessment" element={<Assessment />} /> */}
           </Routes>
         </BrowserRouter>
       </div>
