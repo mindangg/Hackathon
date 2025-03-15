@@ -9,7 +9,7 @@ export default function Header() {
         <header id='header'>
             <div className='nav-bar'>
                 <div className='Text-icon'>
-                    <a href='#'>HealthShark</a>
+                    <Link to='/'>HealthShark</Link>
                 </div>
                 <div className='attribute-nav-bar'>
                     <Link to='/'>Home</Link>

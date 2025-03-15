@@ -10,7 +10,7 @@
   display: flex;
   justify-content: center;
   z-index: 1000; /* Giúp navbar luôn nổi trên các phần khác */
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); /* Thêm hiệu ứng bóng */
+  box-shadow: 0px 5px 0px #09504b, 0px 0px 15px rgba(0, 255, 200, 0.7);
 }
 
 /* Thêm padding-top vào body để tránh nội dung bị che */
@@ -42,8 +42,25 @@ body {
 .attribute-nav-bar a {
   text-decoration: none;
   color: whitesmoke;
+  font-size: 18px;
   font-weight: bold;
-  padding: 5px 10px;
-  border: 1px solid whitesmoke;
-  border-radius: 50px;
+  /* border: 1px solid whitesmoke;
+  border-radius: 50px; */
+  position: relative;
+  margin: 0 10px;
+}
+
+.attribute-nav-bar a::after{
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 0;
+  background-color: whitesmoke;
+  transition: 0.3s;
+}
+
+.attribute-nav-bar a:hover::after{
+  width: 100%;
 }
