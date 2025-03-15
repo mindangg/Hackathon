@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { Link } from 'react-router-dom'
+
 import '../styles/Header.css'
 
 export default function Header() {
@@ -10,8 +12,8 @@ export default function Header() {
                     <a href='#'>HealthShark</a>
                 </div>
                 <div className='attribute-nav-bar'>
-                    <a href='#'>HOME</a>
-                    <a href='#'>HEALTHSHARK SERVICES</a>
+                    <Link to='/'>Home</Link>
+                    <a href='#'>HealthShark Services</a>
                 </div>
             </div>
         </header>

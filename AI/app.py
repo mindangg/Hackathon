@@ -1,8 +1,13 @@
 from transformers import pipeline  
 import random
 
+from fastapi import FastAPI # type: ignore
+
+app = FastAPI()
+
 classifier = pipeline("text-classification", model="distilbert-base-uncased-finetuned-sst-2-english")
 
+@app.post("/analyze")
 def interpret_sentiment(text):
     result = classifier(text)[0]
     label = result['label']
@@ -81,6 +86,6 @@ def interpret_sentiment(text):
     else:
         return random.choice(negative_responses) if score > 0.9 else random.choice(moderate_negative_responses)
 
-# Test
-text_input = input("How are you feeling: ")
-print(interpret_sentiment(text_input))
+# # Test
+# text_input = input("How are you feeling: ")
+# print(interpret_sentiment(text_input))

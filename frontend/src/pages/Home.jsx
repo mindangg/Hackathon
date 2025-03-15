@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { Link } from 'react-router-dom'
+
 import logo from '../assets/healthshark.jpg'
 
 import '../styles/Home.css'
@@ -18,9 +20,9 @@ export default function Home() {
             tools to improve their well-being.
             </p>
         </div>
-        <div id='button'>
-            <a className='nav-1' href=''>Start Assessment</a>
-            <a className='nav-2' href=''>Start Your Health Chat Today</a>
+        <div className='home-button'>
+            <Link className='nav-1' to='/chat'>Start Assessment</Link>
+            <Link className='nav-2' to='/chatbot'>Start Your Health Chat</Link>
         </div>
         </div>
     )

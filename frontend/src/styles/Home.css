@@ -17,40 +17,37 @@
   
   .home h1 {
     color: #25beb3;
-    font-family: "Poppins", sans-serif;
     font-size: 2.2rem;
-    margin: 5px 0;
   }
   
   .home p {
-    font-family: "Poppins", sans-serif;
     text-align: center;
     max-width: 600px;
     font-size: 0.75rem;
     line-height: 1.5;
     margin: 5px 20px;
   }
-  #button {
-      font-family: "Poppins", sans-serif;
-      font-size: 2rem;
-      margin-top: 50px;
+
+ .home-button {
+      font-size: 1.75rem;
+      margin-top: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 10px;
   }
-  #button a {
+  
+  .home-button a {
       text-decoration: none;
       border-radius: 50px;
-     
   }
   
   .nav-1{
       font-weight: bold;
       color: whitesmoke;
       background-color: #09504b;
-      padding: 10px 200px;
+      padding: 10px 110px;
   }
   .nav-2{
       background-color: #7bd8d1;
