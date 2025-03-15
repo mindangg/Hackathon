@@ -1,8 +1,28 @@
+.webcam-popup {
+    position: fixed;
+    top: 150px;
+    right: 50px;
+    width: 400px;
+    max-width: 700px;
+    height: auto;
+    z-index: 1000;
+    background: black;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.webcam-popup video {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+}
+
 .chatbot-container {
     position: relative;
-    top: 100px;
-    width: 420px;
-    height: 500px;
+    top: 90px;
+    width: 450px;
+    height: 600px;
     background-color: #fff;
     border-radius: 10px;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);

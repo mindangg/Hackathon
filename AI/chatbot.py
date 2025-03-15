@@ -6,30 +6,17 @@ from fastapi import FastAPI, UploadFile, File
 from pydantic import BaseModel
 from io import BytesIO
 from pydub import AudioSegment
+from gtts import gTTS
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 
 classifier = pipeline("text-classification", model="distilbert-base-uncased-finetuned-sst-2-english")
-
-class MessageRequest(BaseModel):
-    message: str
+whisper_model = whisper.load_model("base")
 
 # Response categories
 response_dict = {
-    "POSITIVE_HIGH": ["That's amazing! Keep it up!", "You're doing great!"],
-    "POSITIVE_LOW": ["That's great to hear!", "Nice! Keep enjoying your day!"],
-    "NEGATIVE_HIGH": ["It sounds like you're struggling. You're not alone.", "Tough times don’t last forever."],
-    "NEGATIVE_LOW": ["I hope things get better soon.", "Try to stay strong. You got this."]
-}
-
-@app.post("/analyze")
-def interpret_sentiment(request: MessageRequest):
-    text = request.message
-    result = classifier(text)[0]
-    label = result['label']
-    score = result['score']
-
-    positive_responses = [
+    "POSITIVE_HIGH": [
         "That's amazing, try to keep it up!", "You’re doing great, keep pushing forward!", "I love that energy! Stay positive!", 
         "Happiness looks good on you!", "Keep up the good vibes!", "Wow, that's fantastic news!", "Glad to hear that! Keep going strong!", 
         "Your positivity is contagious!", "Awesome! Keep shining!", "That's the spirit! Keep it up!", 
@@ -43,9 +30,9 @@ def interpret_sentiment(request: MessageRequest):
         "Enjoy every moment!", "Keep aiming high!", "You bring joy to others!", "Your light shines bright!", 
         "You have a heart full of joy!", "Happiness is your default mode!", "Your optimism is refreshing!", "You were born to thrive!", 
         "The universe is cheering for you!", "You're glowing with positivity!", "Keep being you!", "You're unstoppable!", "Go get it, champion!"
-    ]
+    ],
 
-    moderate_positive_responses = [
+    "POSITIVE_LOW": [
         "That's great to hear!", "Nice! Keep enjoying your day!", "Good vibes only!", "That sounds really nice!", "Happy to hear that!", 
         "Glad things are going well for you!", "Positive energy suits you!", "Keep embracing the good moments!", 
         "Wishing you more amazing days ahead!", "Stay cheerful and keep spreading happiness!", "Smiling looks good on you!", 
@@ -59,9 +46,9 @@ def interpret_sentiment(request: MessageRequest):
         "Every day is a fresh start!", "Keep spreading kindness!", "You're full of potential!", "You deserve happiness!", 
         "You're heading in the right direction!", "Success is just around the corner!", "Your positivity is powerful!", 
         "You make the world better!", "Your vibe attracts good things!", "You're a source of joy!", "The world needs your light!"
-    ]
+    ],
 
-    negative_responses = [
+    "NEGATIVE_HIGH": [
         "You seem to feel really bad, try to relax.", "It sounds like you’re having a rough time. Take it easy.", 
         "Sorry you're feeling this way. I’m here for you.", "Try to take a deep breath and focus on yourself.", 
         "Remember, tough times don’t last forever.", "You’re stronger than you think. Hang in there.", 
@@ -79,9 +66,9 @@ def interpret_sentiment(request: MessageRequest):
         "Be gentle with yourself.", "Your emotions are valid.", "It’s okay to ask for help.", "It’s okay to take things slow.", 
         "Small steps forward still count.", "You are never truly alone.", "Your journey is important.", 
         "Hope is still alive in you.", "You are seen and heard.", "There’s light ahead."
-    ]
+    ],
 
-    moderate_negative_responses = [
+    "NEGATIVE_LOW": [
         "Aww, that sucks. I wish you a better day.", "That sounds tough, but you'll get through it.", 
         "I’m sorry to hear that. I hope things get better.", "Try to stay strong. You got this.", "It’s okay to feel this way sometimes.", 
         "Sending you good vibes, hope you feel better soon.", "I hope tomorrow brings you something better.", 
@@ -96,26 +83,42 @@ def interpret_sentiment(request: MessageRequest):
         "Your feelings are valid.", "Healing is not linear.", "Let yourself rest.", "You’re doing the best you can.", 
         "Be patient with yourself.", "You're not broken.", "You are enough.", "Your struggles do not define you."
     ]
+}
 
-    if label == "POSITIVE":
-        return random.choice(positive_responses) if score > 0.9 else random.choice(moderate_positive_responses)
-    else:
-        return random.choice(negative_responses) if score > 0.9 else random.choice(moderate_negative_responses)
+class MessageRequest(BaseModel):
+    message: str
 
+@app.post("/analyze")
+def interpret_sentiment(request: MessageRequest):
+    text = request.message
+    result = classifier(text)[0]
+    label = result['label']
+    score = result['score']
+    
+    category = f"{label}_{'HIGH' if score > 0.9 else 'LOW'}"
+    response_text = random.choice(response_dict.get(category, ["I'm here for you."]))
+    
+    return {"response": response_text}
 
 @app.post("/speech-to-text")
 async def speech_to_text(file: UploadFile = File(...)):
-    audio = AudioSegment.from_file(BytesIO(await file.read()), format=file.filename.split(".")[-1])
-    
-    # Convert audio to WAV (required for some speech recognition models)
+    audio_format = file.filename.split(".")[-1]
+    audio = AudioSegment.from_file(BytesIO(await file.read()), format=audio_format)
     audio = audio.set_channels(1).set_frame_rate(16000)
     wav_file = BytesIO()
     audio.export(wav_file, format="wav")
     
-    # Convert speech to text using Whisper
-    text = whisper_model.transcribe(wav_file.getvalue())['text']
+    text = whisper_model.transcribe(wav_file.getvalue())["text"]
     
     return {"transcribed_text": text}
+
+@app.post("/text-to-speech")
+async def text_to_speech(request: MessageRequest):
+    text = request.message
+    tts = gTTS(text, lang="en")
+    audio_path = "response.mp3"
+    tts.save(audio_path)
+    return FileResponse(audio_path, media_type="audio/mpeg", filename="response.mp3")
 
 
 # # Test
