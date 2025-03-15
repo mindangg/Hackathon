@@ -97,15 +97,16 @@ export default function Home() {
             <div ref={infoRef} id="info" className="section">
               <h3>HEALTH TRACKING</h3>
               <p>
-                Easily manage your health! Record key metrics such as heart rate,
-                blood pressure, weight, and daily activity levels. View visual
-                reports to track your bodys changes over time.
-                <ul>
-                  <p>✅ Measure and store health data</p>
-                  <p>✅ Update charts by day, week, and month </p>
-                  <p>✅ Analyze trends and provide alerts for unusual signs</p>
-                </ul>
-              </p>
+              Easily manage your health! Record key metrics such as heart rate,
+              blood pressure, weight, and daily activity levels. View visual
+              reports to track your body's changes over time.
+            </p>
+            <ul>
+              <li>✅ Measure and store health data</li>
+              <li>✅ Update charts by day, week, and month</li>
+              <li>✅ Analyze trends and provide alerts for unusual signs</li>
+            </ul>
+
             </div>
     
             <div ref={serviceRef} id="service" className="section">

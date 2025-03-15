@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-// import { useSignup } from '../hooks/useSignup'
+import { useSignup } from '../hooks/useSignup'
 
 import '../styles/Signup.css'
 
@@ -11,7 +11,7 @@ export default function Signup() {
     const [password, setPassword] = useState('')
     const [confPassword, setConfPassword] = useState('')
 
-    // const { signup, error, setError, isLoading } = useSignup()
+    const { signup, error, setError, isLoading } = useSignup()
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -22,7 +22,7 @@ export default function Signup() {
             return
         }
 
-        // await signup(username, email, password)
+        await signup(username, email, password)
     }
 
     return (

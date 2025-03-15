@@ -2,25 +2,26 @@ import { useState } from 'react'
 import { useAuthContext } from './useAuthContext'
 import { useNotificationContext } from '../hooks/useNotificationContext'
 
-export const useLogin = () => {
+export const useSignup = () => {
     const [error, setError] = useState(null)
     const [isLoading, setIsLoading] = useState(null)
     const { dispatch } = useAuthContext()
     const { showNotification } = useNotificationContext()
 
-    const login = async (username, password) => {
+    const signup = async (username, email, password, phone, address) => {
         setIsLoading(true)
         setError(null)
-
-        const response = await fetch('http://localhost:4000/api/user/login', {
+        
+        const response = await fetch('http://localhost:4000/api/user/signup', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username, email, password, phone, address })
         })
     
         const json = await response.json()
+        console.log(json)
     
         if (!response.ok) {
             setIsLoading(false)
@@ -33,7 +34,7 @@ export const useLogin = () => {
 
             // show notification login
             showNotification(`Hello ${username}`)
-            
+    
             // update the auth context
             dispatch({type: 'LOGIN', payload: json})
     
@@ -41,5 +42,5 @@ export const useLogin = () => {
         }
     }
 
-    return { login, error, isLoading }
+    return { signup, error, setError, isLoading }
 }

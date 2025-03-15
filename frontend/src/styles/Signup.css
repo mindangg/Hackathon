@@ -1,14 +1,17 @@
 .signup-page{
-    width: 450px;
+    width: 500px;
     position: relative;
-    height: 700px;
-    top: 120px;
-    margin: auto;
+    height: 580px;
+    top: 20px;
+    margin: 0 auto;
+    background-color: #7bd8d1;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15)
 }
 
 .signup-page h1{
     font-size: 45px;
-    color: white;
     text-align: center;
 }
 
@@ -26,11 +29,10 @@
     border: 2px solid #363636;
     padding: 20px 45px 20px 20px;
     font-size: 16px;
-    color: white;
+    color: black;
 }
 
 .signup-page input::placeholder{
-    color: #8d8d8d;
     font-size: 16px;
 }
 
@@ -51,7 +53,7 @@
 }
 
 .signup-page a{
-    color: var(--gray);
+    color: black;
     text-decoration: none;
     position: relative;
     cursor: pointer;
@@ -59,7 +61,7 @@
 
 .signup-page a::after{
     content: '';
-    background-color: var(--gray);
+    background-color: black;
     height: 1px;
     width: 100%;
     position: absolute;
