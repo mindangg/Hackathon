@@ -7,10 +7,11 @@ export default function Chatbot() {
         { sender: 'Therapist', text: 'Hello! How are you feeling today?' },
     ]);
     const [input, setInput] = useState('');
-    const [showWebcam, setShowWebcam] = useState(false);
+    const [showWebcam, setShowWebcam] = useState(true);
     const [emotion, setEmotion] = useState('');
     const webcamRef = useRef(null);
     const messagesEndRef = useRef(null);
+    const latestMessageRef = useRef(null); // ✅ Store the latest therapist message to avoid duplicate speech
 
     // Speech-to-Text
     const startListening = () => {
@@ -31,6 +32,8 @@ export default function Chatbot() {
 
     // Text-to-Speech
     const speakText = (text) => {
+        if (!text || text === latestMessageRef.current) return; // ✅ Prevent duplicate speech
+        latestMessageRef.current = text;
         const speech = new SpeechSynthesisUtterance(text);
         speech.lang = 'en-US';
         speechSynthesis.speak(speech);
@@ -56,14 +59,12 @@ export default function Chatbot() {
             console.log("Emotion detected:", data.emotion);
     
             if (data.emotion) {
-                setEmotion(prevEmotion => data.emotion);  // Ensure state updates properly
-    
+                setEmotion(data.emotion); 
+
                 setMessages(prevMessages => [
                     ...prevMessages, 
                     { sender: 'Therapist', text: `I see you're feeling ${data.emotion}. Let's talk about it.` }
                 ]);
-    
-                speakText(`I see you're feeling ${data.emotion}. Let's talk about it.`);
             }
         } catch (error) {
             console.error("Error analyzing emotion:", error);
@@ -75,7 +76,10 @@ export default function Chatbot() {
         
         if (!showWebcam) setShowWebcam(true);
 
-        setMessages([...messages, { sender: 'You', text: input }]);
+        setMessages(prevMessages => [
+            ...prevMessages, 
+            { sender: 'You', text: input }
+        ]);
 
         try {
             const response = await fetch('http://localhost:4000/api/chatbot', {
@@ -87,11 +91,10 @@ export default function Chatbot() {
             });
 
             const json = await response.json();
-            setMessages(prevMessages => {
-                const newMessages = [...prevMessages, { sender: 'Therapist', text: json.response }];
-                speakText(json.response);
-                return newMessages;
-            });
+            setMessages(prevMessages => [
+                ...prevMessages, 
+                { sender: 'Therapist', text: json.response }
+            ]);
         } 
         catch (error) {
             console.error('Error sending message:', error);
@@ -100,6 +103,15 @@ export default function Chatbot() {
         setInput('');
     };
 
+    // ✅ Speak the latest therapist message **only once**
+    useEffect(() => {
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage?.sender === 'Therapist') {
+            speakText(lastMessage.text);
+        }
+    }, [messages]);
+
+    // Auto-scroll chat messages
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
