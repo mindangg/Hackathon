@@ -47,37 +47,52 @@ export default function Chatbot() {
     };
 
     const captureAndAnalyzeEmotion = async () => {
-        if (!webcamRef.current) return;
+        if (!webcamRef.current) {
+            console.error('Webcam reference is not available.');
+            return;
+        }
     
         const imageSrc = webcamRef.current.getScreenshot();
-        const blob = await fetch(imageSrc).then(res => res.blob());
-    
-        const formData = new FormData();
-        formData.append('file', blob, 'image.jpg');
+        if (!imageSrc) {
+            console.error('Failed to capture image from webcam.');
+            return;
+        }
     
         try {
+            const blob = await fetch(imageSrc).then(res => res.blob());
+            const formData = new FormData();
+            formData.append('file', blob, 'image.jpg');
+    
             const response = await fetch('http://localhost:5000/analyze-emotion', {
                 method: 'POST',
                 body: formData,
             });
     
+            if (!response.ok) {
+                throw new Error(`API Error: ${response.status} - ${response.statusText}`);
+            }
+    
             const data = await response.json();
             console.log('Full API Response:', data);
     
-            const detectedEmotion = data.dominant_emotion || 'unknown';
+            const detectedEmotion = data?.dominant_emotion || 'unknown';
             console.log('Emotion detected:', detectedEmotion);
     
-            if (detectedEmotion) {
+            if (detectedEmotion !== 'unknown') {
                 setEmotion(detectedEmotion);
-                setMessages(prevMessages => [
+                setMessages((prevMessages) => [
                     ...prevMessages,
                     { sender: 'Therapist', text: `I see you're feeling ${detectedEmotion}. Let's talk about it.` }
                 ]);
+            } 
+            else {
+                console.warn('No dominant emotion detected.');
             }
-        } catch (error) {
+        } 
+        catch (error) {
             console.error('Error analyzing emotion:', error);
         }
-    };
+    };    
     
 
     const handleSend = async () => {

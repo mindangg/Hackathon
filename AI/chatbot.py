@@ -135,34 +135,43 @@ response_dict = {
 
 @app.post("/analyze")
 async def chat_response(request: MessageRequest):
-    emotion_result = emotion_pipeline(request.message)[0]
+    try:
+        emotion_result = emotion_pipeline(request.message)[0]
 
-    label = emotion_result['label'].lower()
-    response = random.choice(response_dict.get(label, ["I'm here for you."]))
+        label = emotion_result['label'].lower()
+        response = random.choice(response_dict.get(label, ["I'm here for you."]))
 
-    return {
-        "emotion": label,
-        "confidence": emotion_result['score'],
-        "response": response
-    }
+        return {
+            "emotion": label,
+            "confidence": emotion_result['score'],
+            "response": response
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/speech-to-text")
 async def speech_to_text(file: UploadFile = File(...)):
-    content = await file.read()
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
-        temp_file.write(content)
-        temp_path = temp_file.name
-    text = whisper_model.transcribe(temp_path)["text"]
-    os.unlink(temp_path)
-    return {"transcribed_text": text}
+    try:
+        content = await file.read()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
+            temp_file.write(content)
+            temp_path = temp_file.name
+        text = whisper_model.transcribe(temp_path)["text"]
+        os.unlink(temp_path)
+        return {"transcribed_text": text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/text-to-speech")
 async def text_to_speech(request: MessageRequest):
-    tts = gTTS(request.message, lang="en")
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
-        audio_path = temp_file.name
-    tts.save(audio_path)
-    return FileResponse(audio_path, media_type="audio/mpeg", filename="response.mp3")
+    try:
+        tts = gTTS(request.message, lang="en")
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
+            audio_path = temp_file.name
+        tts.save(audio_path)
+        return FileResponse(audio_path, media_type="audio/mpeg", filename="response.mp3")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/analyze-emotion")
 async def analyze_emotion(file: UploadFile = File(...)):
@@ -177,7 +186,6 @@ async def analyze_emotion(file: UploadFile = File(...)):
         # Perform emotion analysis
         analysis = DeepFace.analyze(image, actions=['emotion'], enforce_detection=False)[0]
 
-        # Convert NumPy float32 to Python float for JSON serialization
         emotion_scores = {k: float(v) for k, v in analysis.get("emotion", {}).items()}
         dominant_emotion = analysis.get("dominant_emotion", "unknown")
 
