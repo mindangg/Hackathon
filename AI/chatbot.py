@@ -142,67 +142,70 @@ response_dict = {
     ]
 }
 
-# Define negation replacements
-negation_mapping = {
-    r"\bnot bad\b": "good",
-    r"\bnot terrible\b": "okay",
-    r"\bnot sad\b": "neutral",
-    r"\bnot unhappy\b": "happy",
-    r"\bnot angry\b": "calm",
-    r"\bnot scared\b": "brave",
-    r"\bnot nervous\b": "confident",
-    r"\bnot upset\b": "calm",
-    r"\bnot stressed\b": "relaxed",
-    r"\bnot worried\b": "assured",
-    r"\bnot anxious\b": "peaceful",
-    r"\bnot afraid\b": "courageous",
-    r"\bnot disappointed\b": "satisfied",
-    r"\bnot frustrated\b": "patient",
-    r"\bnot lonely\b": "connected",
-    r"\bnot depressed\b": "hopeful",
-    r"\bnot pessimistic\b": "optimistic",
-    r"\bnot hopeless\b": "hopeful",
-    r"\bnot weak\b": "strong",
-    r"\bnot hesitant\b": "decisive",
-    r"\bnot indifferent\b": "engaged",
-    r"\bnot annoyed\b": "tolerant",
-    r"\bnot miserable\b": "content",
-    r"\bnot bored\b": "interested",
-    r"\bnot tired\b": "energetic",
-    r"\bnot sick\b": "healthy",
-    r"\bnot broken\b": "whole",
-    r"\bnot confused\b": "clear-headed",
-    r"\bnot lost\b": "focused",
-    r"\bnot discouraged\b": "motivated",
-    r"\bnot shy\b": "outgoing",
-    r"\bnot hostile\b": "friendly",
-    r"\bnot cruel\b": "kind",
-    r"\bnot insecure\b": "confident",
-    r"\bnot doubtful\b": "certain",
-    r"\bnot resistant\b": "receptive",
-    r"\bnot unstable\b": "steady",
-    r"\bnot restless\b": "peaceful",
-    r"\bnot hesitant\b": "assertive",
-    r"\bnot discouraged\b": "determined",
-}
+# Load spaCy for sentence parsing
+nlp = spacy.load("en_core_web_sm")
 
+# Improved negation mapping
+negation_mapping = {
+    "bad": "good",
+    "terrible": "okay",
+    "sad": "neutral",
+    "unhappy": "happy",
+    "angry": "calm",
+    "scared": "brave",
+    "nervous": "confident",
+    "upset": "calm",
+    "stressed": "relaxed",
+    "worried": "assured",
+    "anxious": "peaceful",
+    "afraid": "courageous",
+    "disappointed": "satisfied",
+    "frustrated": "patient",
+    "lonely": "connected",
+    "depressed": "hopeful",
+    "pessimistic": "optimistic",
+    "hopeless": "hopeful",
+    "weak": "strong",
+    "hesitant": "decisive",
+    "indifferent": "engaged",
+    "annoyed": "tolerant",
+    "miserable": "content",
+    "bored": "interested",
+    "tired": "energetic",
+    "sick": "healthy",
+    "broken": "whole",
+    "confused": "clear-headed",
+    "lost": "focused",
+    "discouraged": "motivated",
+    "shy": "outgoing",
+    "hostile": "friendly",
+    "cruel": "kind",
+    "insecure": "confident",
+    "doubtful": "certain",
+    "resistant": "receptive",
+    "unstable": "steady",
+    "restless": "peaceful",
+    "hesitant": "assertive",
+    "discouraged": "determined",
+}
 
 def preprocess_text(text: str) -> str:
     """
-    Processes the text to handle negations and common misclassifications.
+    Processes the text to handle negations and improve sentiment detection.
+    Uses NLP to ensure proper context handling.
     """
 
-    text = text.lower().strip()  # Normalize text
+    doc = nlp(text.lower().strip())  # Process with spaCy for sentence structure
 
-    # Apply negation replacements
-    for pattern, replacement in negation_mapping.items():
-        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+    new_text = []
+    for token in doc:
+        # Check if negation is modifying an emotion-related word
+        if token.dep_ == "neg" and token.head.text in negation_mapping:
+            new_text.append(negation_mapping[token.head.text])  # Replace with mapped word
+        elif token.text not in ["not", "n't"]:  # Remove "not" after replacing
+            new_text.append(token.text)
 
-    # Special case: "I feel bad" should be sadness, not anger
-    if re.search(r"\bi feel bad\b", text):
-        text = text.replace("bad", "down")  # Change "bad" to "down" to reflect sadness
-
-    return text
+    return " ".join(new_text)
 
 @app.post("/analyze")
 async def chat_response(request: MessageRequest):
