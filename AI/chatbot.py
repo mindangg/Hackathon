@@ -12,6 +12,9 @@ import cv2
 import numpy as np
 from deepface import DeepFace
 from transformers import pipeline
+import spacy
+from negspacy.negation import Negex
+import re
 
 app = FastAPI()
 
@@ -26,10 +29,16 @@ app.add_middleware(
 # Load models
 whisper_model = whisper.load_model("base")
 
-emotion_pipeline = pipeline("text-classification", model="bhadresh-savani/distilbert-base-uncased-emotion")
+emotion_pipeline1 = pipeline("text-classification", model="bhadresh-savani/distilbert-base-uncased-emotion")
+emotion_pipeline2 = pipeline("text-classification", model="j-hartmann/emotion-english-distilroberta-base")
 
 class MessageRequest(BaseModel):
     message: str
+
+# Load Spacy NLP model for negation detection
+nlp = spacy.load("en_core_web_sm")
+
+nlp.add_pipe("negex")
 
 response_dict = {
     "joy": [
@@ -133,21 +142,121 @@ response_dict = {
     ]
 }
 
+# Define negation replacements
+negation_mapping = {
+    r"\bnot bad\b": "good",
+    r"\bnot terrible\b": "okay",
+    r"\bnot sad\b": "neutral",
+    r"\bnot unhappy\b": "happy",
+    r"\bnot angry\b": "calm",
+    r"\bnot scared\b": "brave",
+    r"\bnot nervous\b": "confident",
+    r"\bnot upset\b": "calm",
+    r"\bnot stressed\b": "relaxed",
+    r"\bnot worried\b": "assured",
+    r"\bnot anxious\b": "peaceful",
+    r"\bnot afraid\b": "courageous",
+    r"\bnot disappointed\b": "satisfied",
+    r"\bnot frustrated\b": "patient",
+    r"\bnot lonely\b": "connected",
+    r"\bnot depressed\b": "hopeful",
+    r"\bnot pessimistic\b": "optimistic",
+    r"\bnot hopeless\b": "hopeful",
+    r"\bnot weak\b": "strong",
+    r"\bnot hesitant\b": "decisive",
+    r"\bnot indifferent\b": "engaged",
+    r"\bnot annoyed\b": "tolerant",
+    r"\bnot miserable\b": "content",
+    r"\bnot bored\b": "interested",
+    r"\bnot tired\b": "energetic",
+    r"\bnot sick\b": "healthy",
+    r"\bnot broken\b": "whole",
+    r"\bnot confused\b": "clear-headed",
+    r"\bnot lost\b": "focused",
+    r"\bnot discouraged\b": "motivated",
+    r"\bnot shy\b": "outgoing",
+    r"\bnot hostile\b": "friendly",
+    r"\bnot cruel\b": "kind",
+    r"\bnot insecure\b": "confident",
+    r"\bnot doubtful\b": "certain",
+    r"\bnot resistant\b": "receptive",
+    r"\bnot unstable\b": "steady",
+    r"\bnot restless\b": "peaceful",
+    r"\bnot hesitant\b": "assertive",
+    r"\bnot discouraged\b": "determined",
+}
+
+
+def preprocess_text(text: str) -> str:
+    """
+    Processes the text to handle negations and common misclassifications.
+    """
+
+    text = text.lower().strip()  # Normalize text
+
+    # Apply negation replacements
+    for pattern, replacement in negation_mapping.items():
+        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+
+    # Special case: "I feel bad" should be sadness, not anger
+    if re.search(r"\bi feel bad\b", text):
+        text = text.replace("bad", "down")  # Change "bad" to "down" to reflect sadness
+
+    return text
+
 @app.post("/analyze")
 async def chat_response(request: MessageRequest):
     try:
-        emotion_result = emotion_pipeline(request.message)[0]
+        processed_message = preprocess_text(request.message)
 
-        label = emotion_result['label'].lower()
-        response = random.choice(response_dict.get(label, ["I'm here for you."]))
+        # Get predictions in parallel
+        results = [emotion_pipeline1(processed_message)[0], emotion_pipeline2(processed_message)[0]]
+
+        # Confidence-weighted scoring system
+        label_scores = {}
+        total_confidence = 0
+
+        for result in results:
+            label = result['label'].lower()
+            confidence = result['score']
+            label_scores[label] = label_scores.get(label, 0) + confidence
+            total_confidence += confidence
+
+        # Normalize scores
+        if total_confidence > 0:
+            for label in label_scores:
+                label_scores[label] /= total_confidence
+
+        # Choose the highest weighted label
+        final_label = max(label_scores, key=label_scores.get)
+        final_confidence = label_scores[final_label]
+
+        # Get a response
+        response = random.choice(response_dict.get(final_label, ["I'm here for you."]))
 
         return {
-            "emotion": label,
-            "confidence": emotion_result['score'],
+            "emotion": final_label,
+            "confidence": final_confidence,
             "response": response
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# @app.post("/analyze")
+# async def chat_response(request: MessageRequest):
+#     try:
+#         emotion_result = emotion_pipeline(request.message)[0]
+
+#         label = emotion_result['label'].lower()
+#         response = random.choice(response_dict.get(label, ["I'm here for you."]))
+
+#         return {
+#             "emotion": label,
+#             "confidence": emotion_result['score'],
+#             "response": response
+#         }
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/speech-to-text")
 async def speech_to_text(file: UploadFile = File(...)):
