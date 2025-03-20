@@ -46,19 +46,32 @@ response_dict = {
             "That’s great to hear! What’s something small that made you smile today?",
             "A little happiness goes a long way! What’s making you feel good?",
             "I love that energy! Anything fun happening today?",
-            "Even the smallest joys are worth celebrating. Tell me about it!"
+            "Even the smallest joys are worth celebrating. Tell me about it!",
+            "It’s always nice to hear good news! What’s been making you feel good?",
+            "Happiness is contagious! What’s something positive that happened recently?",
+            "Small wins matter too! What’s one thing that made you feel good today?"
         ],
         "moderate": [
             "That sounds wonderful! What’s been the highlight of your day?",
             "Your happiness is contagious! What’s making today special?",
             "Love to hear that! Tell me more about what’s making you happy.",
-            "Happiness is a great feeling! Is there something exciting happening?"
+            "Happiness is a great feeling! Is there something exciting happening?",
+            "I can feel the positivity from here! What’s been making your day so great?",
+            "That’s amazing! Have you shared your happiness with someone today?",
+            "Good vibes all around! What’s something exciting you’ve been looking forward to?"
         ],
         "intense": [
             "Wow, you sound over the moon! What’s bringing you so much joy?",
             "That’s amazing! What’s the best part of your day so far?",
             "I can feel your excitement! What’s making you this happy?",
-            "You’re glowing with happiness! What’s the most exciting thing that happened?"
+            "You’re glowing with happiness! What’s the most exciting thing that happened?",
+            "This is amazing! What’s making you feel so overjoyed?",
+            "You must be on top of the world right now! Tell me everything!",
+            "Your happiness is radiating! What’s been the best part of your day?",
+            "Wow, this sounds like a moment to remember! How are you celebrating?",
+            "That level of excitement is incredible! What’s made this day so special?",
+            "I love hearing this kind of joy! What’s something you’ll always remember about today?",
+            "Your excitement is contagious! What’s one thing that made this so amazing?"
         ]
     },
     "sadness": {
@@ -66,19 +79,35 @@ response_dict = {
             "I hear you. It’s okay to feel a little down sometimes.",
             "A tough moment doesn’t define your whole day. Want to talk about it?",
             "I’m here for you. Do you want to share what’s on your mind?",
-            "It’s completely okay to feel this way. What’s bothering you?"
+            "It’s completely okay to feel this way. What’s bothering you?",
+            "I understand. Even small struggles can feel big sometimes. What’s been going on?",
+            "I’m here to listen if you want to talk.",
+            "You’re not alone in this. What’s been weighing on you?"
         ],
         "moderate": [
             "I know things feel heavy right now. You’re not alone in this.",
             "Your feelings are valid. Want to talk about what’s been on your mind?",
             "Sometimes just talking helps. I’m here whenever you’re ready.",
-            "It’s okay to have these feelings. What’s making you feel this way?"
+            "It’s okay to have these feelings. What’s making you feel this way?",
+            "You don’t have to go through this alone. I’m here for you.",
+            "I can tell this is tough. Do you want to share more about what’s been happening?",
+            "You’re doing the best you can, and that’s enough. What’s been hardest for you?"
         ],
         "intense": [
             "I’m really sorry you’re feeling this way. I’m here for you.",
             "You’re not alone. Even when it feels like it, there are people who care about you.",
             "I wish I could give you a big hug right now. You deserve kindness and support.",
-            "If you’re struggling, know that you don’t have to go through this alone. I’m here."
+            "If you’re struggling, know that you don’t have to go through this alone. I’m here.",
+            "This must be really hard for you. I want to support you however I can.",
+            "You’re stronger than you think, even when it doesn’t feel that way.",
+            "Please be kind to yourself. You deserve care and understanding.",
+            "I’m really sorry you’re going through this. You’re not alone.",
+            "You deserve kindness and support. I’m here for you.",
+            "If this feels overwhelming, please reach out to someone you trust.",
+            "I wish I could take away your pain. Just know that you are valued and cared for.",
+            "You are stronger than you feel right now. I’m here to support you.",
+            "I can’t imagine how hard this must be, but I’m here to listen.",
+            "Even in your darkest moments, you are not alone. I care about you."
         ]
     },
     "anger": {
@@ -86,19 +115,28 @@ response_dict = {
             "I see you’re a little frustrated. Want to talk about it?",
             "That sounds annoying! What happened?",
             "It’s okay to feel this way. What’s been on your mind?",
-            "Frustration happens to everyone. Do you want to vent?"
+            "Frustration happens to everyone. Do you want to vent?",
+            "That must have been frustrating. How can I help?",
+            "I get why that would bother you. Want to talk it out?",
+            "Sometimes little things build up. What’s been going on?"
         ],
         "moderate": [
             "I hear you, that sounds really upsetting. What’s going on?",
             "It sounds like this really got to you. Want to talk through it?",
             "That must have been really frustrating. I’m here to listen.",
-            "I understand why you’re upset. Let’s figure this out together."
+            "I understand why you’re upset. Let’s figure this out together.",
+            "Anger is a natural reaction. What’s making you feel this way?",
+            "It’s okay to let it out. What’s been bothering you the most?",
+            "You deserve to be heard. Tell me what happened."
         ],
         "intense": [
             "I can tell you’re really upset. Take a deep breath – I’m here.",
             "That sounds really difficult. I want to support you however I can.",
             "Anger can be overwhelming. Want to talk about it?",
-            "Let’s work through this together. You don’t have to deal with it alone."
+            "Let’s work through this together. You don’t have to deal with it alone.",
+            "I hear you loud and clear. What’s making you feel this way?",
+            "I understand your frustration. How can I help you feel better?",
+            "It’s okay to be upset. I’m here to listen without judgment."
         ]
     },
     "fear": {
@@ -106,19 +144,28 @@ response_dict = {
             "That sounds a little unsettling. Want to talk about it?",
             "I understand. Fear can be tough to deal with.",
             "It’s okay to feel uneasy sometimes. What’s making you feel this way?",
-            "You’re safe here. Do you want to share what’s on your mind?"
+            "You’re safe here. Do you want to share what’s on your mind?",
+            "I hear you. It’s normal to feel nervous sometimes.",
+            "That must have made you uncomfortable. Do you want to talk about it?",
+            "Fear can be overwhelming, but you’re not alone."
         ],
         "moderate": [
             "That sounds really scary. I’m here to listen.",
             "Fear can feel overwhelming, but you’re not alone.",
             "I hear you. Facing fears is hard, but you’re strong.",
-            "You don’t have to go through this alone. I’m here."
+            "You don’t have to go through this alone. I’m here.",
+            "I know that feeling can be difficult to manage. What’s making you feel this way?",
+            "It’s okay to be afraid. I’ll be here for you while you work through it.",
+            "I understand why you’re scared. Let’s talk about it together."
         ],
         "intense": [
             "That sounds terrifying. I want to help you feel safe.",
             "You’re not alone. I believe in your strength to get through this.",
             "It’s okay to be scared. I’m here with you every step of the way.",
-            "Take a deep breath. I’m right here with you."
+            "Take a deep breath. I’m right here with you.",
+            "That must have been really frightening. Do you want to share more about it?",
+            "You don’t have to face this alone. I’m here for you.",
+            "It’s okay to let yourself feel scared. You’re not in this alone."
         ]
     },
     "neutral": {
@@ -130,6 +177,7 @@ response_dict = {
         ]
     }
 }
+
 
 # Load spaCy for sentence parsing
 nlp = spacy.load("en_core_web_sm")
@@ -320,10 +368,33 @@ async def chat_response(request: dict):
         # Get a response
         response = get_nuanced_response(final_label, final_confidence)
 
+        # Add slight variation at the end
+        variation = random.choice([
+            "How does that make you feel?",  
+            "Want to talk more about it?",  
+            "Tell me more.",  
+            "I'm here to listen.",  
+            "That sounds important. Let's discuss.",  
+            "I'm all ears. What's on your mind?",  
+            "That must be a lot to process.",  
+            "Would you like to share more?",  
+            "You’re not alone in this. Want to unpack it together?",  
+            "That makes sense. What else is going on?",  
+            "I hear you. Do you want to explore that feeling further?",  
+            "Take your time. I'm here when you're ready.",  
+            "That sounds tough. Do you need advice or just a listening ear?",  
+            "What’s been the hardest part for you?",  
+            "If you could change one thing about this situation, what would it be?",  
+            "It’s okay to feel this way. What can I do to support you?",  
+            "Do you want to vent, or should I offer some perspective?",  
+            "That seems important to you. Let’s talk about it.",  
+            "How can I best support you right now?"  
+        ])
+
         return {
             "emotion": final_label,
             "confidence": final_confidence,
-            "response": response
+            "response": f"{response} {variation}"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
