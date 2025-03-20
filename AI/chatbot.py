@@ -139,13 +139,27 @@ response_dict = {
         "I totally get that. Some things are just hard to deal with.",
         "That must have been really unpleasant! Do you want to vent about it?",
         "Yikes! That doesn’t sound fun at all. What happened?"
+    ],
+    "neutral": [
+        "I see. Tell me more if you’d like.",
+        "Got it. How do you feel about that?",
+        "I’m listening. What’s on your mind?",
+        "Understood. Is there anything else you’d like to share?",
+        "Alright. Let me know if there’s anything I can do.",
+        "That makes sense. What else is going on?",
+        "Okay, I’m here to listen whenever you need.",
+        "I hear you. Do you want to talk more about it?",
+        "Sounds like a balanced perspective. Anything else on your mind?",
+        "I appreciate you sharing that. Would you like to expand on it?",
+        "Thanks for telling me. What else is new?",
+        "Neutral days can be good too. Anything interesting happening?",
     ]
 }
 
 # Load spaCy for sentence parsing
 nlp = spacy.load("en_core_web_sm")
 
-# Improved negation mapping
+# Improved negation mapping (including direct replacements for "not bad" cases)
 negation_mapping = {
     "bad": "good",
     "terrible": "okay",
@@ -189,21 +203,82 @@ negation_mapping = {
     "discouraged": "determined",
 }
 
+# Special cases where "not X" should be mapped directly
+negation_phrases = {
+    "not bad": "good",
+    "not terrible": "okay",
+    "not sad": "neutral",
+    "not unhappy": "happy",
+    "not angry": "calm",
+    "not scared": "brave",
+    "not nervous": "confident",
+    "not upset": "calm",
+    "not stressed": "relaxed",
+    "not worried": "assured",
+    "not anxious": "peaceful",
+    "not afraid": "courageous",
+    "not disappointed": "satisfied",
+    "not frustrated": "patient",
+    "not lonely": "connected",
+    "not depressed": "hopeful",
+    "not pessimistic": "optimistic",
+    "not hopeless": "hopeful",
+    "not weak": "strong",
+    "not hesitant": "decisive",
+    "not indifferent": "engaged",
+    "not annoyed": "tolerant",
+    "not miserable": "content",
+    "not bored": "interested",
+    "not tired": "energetic",
+    "not sick": "healthy",
+    "not broken": "whole",
+    "not confused": "clear-headed",
+    "not lost": "focused",
+    "not discouraged": "motivated",
+    "not shy": "outgoing",
+    "not hostile": "friendly",
+    "not cruel": "kind",
+    "not insecure": "confident",
+    "not doubtful": "certain",
+    "not resistant": "receptive",
+    "not unstable": "steady",
+    "not restless": "peaceful",
+    "not hesitant": "assertive",
+    "not discouraged": "determined",
+    "not great": "bad",  # Added this to handle 'not great' cases
+}
+
 def preprocess_text(text: str) -> str:
     """
     Processes the text to handle negations and improve sentiment detection.
     Uses NLP to ensure proper context handling.
     """
+    text = text.lower().strip()
 
-    doc = nlp(text.lower().strip())  # Process with spaCy for sentence structure
+    # Check for direct negation phrases
+    for phrase, replacement in negation_phrases.items():
+        if phrase in text:
+            text = text.replace(phrase, replacement)
+
+    doc = nlp(text)  # Process with spaCy for sentence structure
 
     new_text = []
-    for token in doc:
-        # Check if negation is modifying an emotion-related word
+    skip_next = False
+
+    for i, token in enumerate(doc):
+        if skip_next:
+            skip_next = False
+            continue
+
+        # Detect negation before a mapped word
         if token.dep_ == "neg" and token.head.text in negation_mapping:
             new_text.append(negation_mapping[token.head.text])  # Replace with mapped word
+            skip_next = True  # Skip the next word to avoid redundancy
         elif token.text not in ["not", "n't"]:  # Remove "not" after replacing
             new_text.append(token.text)
+    
+    print(f"Original: {text}")
+    print(f"Processed: {' '.join(new_text)}")
 
     return " ".join(new_text)
 
@@ -233,6 +308,10 @@ async def chat_response(request: MessageRequest):
         # Choose the highest weighted label
         final_label = max(label_scores, key=label_scores.get)
         final_confidence = label_scores[final_label]
+
+        # **Handle neutral case** (low-confidence emotions)
+        if final_confidence < 0.4:  # Threshold for neutrality
+            final_label = "neutral"
 
         # Get a response
         response = random.choice(response_dict.get(final_label, ["I'm here for you."]))
