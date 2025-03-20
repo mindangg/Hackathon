@@ -38,128 +38,103 @@ class MessageRequest(BaseModel):
 # Load Spacy NLP model for negation detection
 nlp = spacy.load("en_core_web_sm")
 
-nlp.add_pipe("negex")
+nlp.add_pipe("negex", config={"ent_types": ["ADJ", "VERB"]})
 
 response_dict = {
-    "joy": [
-        "That's amazing! Keep spreading positivity!", 
-        "You sound happy! What's making your day great?",
-        "Happiness is contagious! Tell me what’s bringing you joy today.",
-        "That’s wonderful! Savor the good moments.",
-        "I love hearing that! What’s something exciting happening for you?",
-        "It's great to hear you’re feeling happy! Anything in particular that made your day?",
-        "Keep smiling! The world needs more joy.",
-        "Sounds like a great day! What’s been the highlight so far?",
-        "Good vibes all around! Want to share what’s making you so cheerful?",
-        "Happiness suits you! What’s been going well lately?",
-        "That’s such a positive thing to hear! What’s bringing you so much joy?",
-        "You deserve happiness! What’s something you’re looking forward to?",
-        "Your happiness shines through! I’d love to hear what’s making you smile.",
-        "Life’s little joys are worth celebrating! What’s making you feel this way?",
-        "It’s great to see you happy! What’s one thing that brought you joy today?"
-    ],
-    "sadness": [
-        "I'm here for you. Want to talk about it?", 
-        "It's okay to feel sad sometimes. You're not alone.",
-        "I hear you. If you need someone to listen, I'm here.",
-        "It’s completely okay to feel down. I’m here to support you.",
-        "Would you like to talk about what’s on your mind?",
-        "You are not alone in this. I’m here whenever you want to share.",
-        "If it helps, I can listen. No pressure, just support.",
-        "Sometimes, just talking about it can make a difference. I’m here.",
-        "I wish I could give you a big hug right now. You’re not alone.",
-        "You’re stronger than you think. I believe in you.",
-        "I know it’s tough right now, but brighter days are ahead.",
-        "Your feelings are valid. I’m here to support you however I can.",
-        "You’re doing your best, and that’s enough. I’m here for you.",
-        "I understand how heavy sadness can feel. You don’t have to carry it alone.",
-        "Lean on me whenever you need. You don’t have to go through this alone."
-    ],
-    "anger": [
-        "I see you're upset. Do you want to share what's bothering you?", 
-        "It's okay to feel angry. Let's try to find a solution together.",
-        "Anger is a valid feeling. What happened?",
-        "I hear your frustration. Want to vent?",
-        "It’s okay to feel this way. I’m here to listen without judgment.",
-        "Do you want to talk about it or find ways to cool down? Either way, I’m here.",
-        "What’s on your mind? Sometimes putting feelings into words helps.",
-        "Anger can be tough to deal with, but I’m here to help you through it.",
-        "If you need to express how you feel, I’m here for you.",
-        "I understand that things can get frustrating. You’re not alone in this.",
-        "I can see that something really upset you. Do you want to work through it together?",
-        "Anger is a natural response. Let’s take a deep breath and talk it out.",
-        "Would you like to focus on solutions or just vent for now? I’m here for either.",
-        "It’s okay to feel this way. How can I help make things a little better?",
-        "You don’t have to deal with this alone. I’m here to listen and support you."
-    ],
-    "surprise": [
-        "That sounds unexpected! What happened?", 
-        "Wow! That must have been a shock!",
-        "That sounds like quite the twist! Want to tell me more?",
-        "Unexpected moments can be exciting! What’s going on?",
-        "Whoa! That must have caught you off guard. How do you feel about it?",
-        "Surprises can be thrilling or overwhelming. Which one is this for you?",
-        "I wasn’t expecting that either! Tell me more!",
-        "Did this surprise make your day better or more complicated?",
-        "I love surprises! Unless they’re the bad kind. Which one was this?",
-        "Life has a way of throwing curveballs! How are you feeling about it?",
-        "Surprises keep life interesting! Was this a good one or a challenging one?",
-        "Wow! That must have been a moment to remember. What happened?",
-        "Not every day brings surprises! How did this one make you feel?",
-        "A twist in the story! Was it a happy or shocking surprise?",
-        "Tell me more! I’d love to hear how this surprise unfolded."
-    ],
-    "fear": [
-        "That sounds scary. Want to talk about it?", 
-        "It's okay to be afraid. You're safe here.",
-        "Fear is a natural response. What’s making you feel this way?",
-        "You don’t have to face this alone. I’m here.",
-        "Sometimes talking about our fears can make them feel smaller. Want to share?",
-        "I hear you. Fear can be overwhelming, but you’re not alone.",
-        "Take a deep breath. I’m right here with you.",
-        "It’s okay to be scared. Do you want to talk through it?",
-        "I want to help you feel safe. What’s on your mind?",
-        "You’re stronger than your fears. I believe in you.",
-        "Fear can feel paralyzing, but you don’t have to face it alone.",
-        "Let’s take this one step at a time. I’m right here with you.",
-        "You’re in a safe space. Tell me what’s on your mind.",
-        "I understand why this feels scary. Let’s talk through it together.",
-        "Courage doesn’t mean the absence of fear; it means facing it. You’ve got this."
-    ],
-    "disgust": [
-        "That doesn't sound pleasant. What happened?", 
-        "I get that. Some things can be really off-putting.",
-        "That sounds really unpleasant. Do you want to share more about it?",
-        "I understand why you’d feel that way. What’s going on?",
-        "It’s okay to feel disgusted. Some things just don’t sit right.",
-        "Ugh, that doesn’t sound great at all. Tell me about it.",
-        "I can imagine how that would be upsetting. What happened?",
-        "Some things just don’t feel right. Want to talk about it?",
-        "Your feelings are valid. What made you feel this way?",
-        "I totally get that. Some things are just hard to deal with.",
-        "That must have been really unpleasant! Do you want to vent about it?",
-        "Yikes! That doesn’t sound fun at all. What happened?"
-    ],
-    "neutral": [
-        "I see. Tell me more if you’d like.",
-        "Got it. How do you feel about that?",
-        "I’m listening. What’s on your mind?",
-        "Understood. Is there anything else you’d like to share?",
-        "Alright. Let me know if there’s anything I can do.",
-        "That makes sense. What else is going on?",
-        "Okay, I’m here to listen whenever you need.",
-        "I hear you. Do you want to talk more about it?",
-        "Sounds like a balanced perspective. Anything else on your mind?",
-        "I appreciate you sharing that. Would you like to expand on it?",
-        "Thanks for telling me. What else is new?",
-        "Neutral days can be good too. Anything interesting happening?",
-    ]
+    "joy": {
+        "mild": [
+            "That’s great to hear! What’s something small that made you smile today?",
+            "A little happiness goes a long way! What’s making you feel good?",
+            "I love that energy! Anything fun happening today?",
+            "Even the smallest joys are worth celebrating. Tell me about it!"
+        ],
+        "moderate": [
+            "That sounds wonderful! What’s been the highlight of your day?",
+            "Your happiness is contagious! What’s making today special?",
+            "Love to hear that! Tell me more about what’s making you happy.",
+            "Happiness is a great feeling! Is there something exciting happening?"
+        ],
+        "intense": [
+            "Wow, you sound over the moon! What’s bringing you so much joy?",
+            "That’s amazing! What’s the best part of your day so far?",
+            "I can feel your excitement! What’s making you this happy?",
+            "You’re glowing with happiness! What’s the most exciting thing that happened?"
+        ]
+    },
+    "sadness": {
+        "mild": [
+            "I hear you. It’s okay to feel a little down sometimes.",
+            "A tough moment doesn’t define your whole day. Want to talk about it?",
+            "I’m here for you. Do you want to share what’s on your mind?",
+            "It’s completely okay to feel this way. What’s bothering you?"
+        ],
+        "moderate": [
+            "I know things feel heavy right now. You’re not alone in this.",
+            "Your feelings are valid. Want to talk about what’s been on your mind?",
+            "Sometimes just talking helps. I’m here whenever you’re ready.",
+            "It’s okay to have these feelings. What’s making you feel this way?"
+        ],
+        "intense": [
+            "I’m really sorry you’re feeling this way. I’m here for you.",
+            "You’re not alone. Even when it feels like it, there are people who care about you.",
+            "I wish I could give you a big hug right now. You deserve kindness and support.",
+            "If you’re struggling, know that you don’t have to go through this alone. I’m here."
+        ]
+    },
+    "anger": {
+        "mild": [
+            "I see you’re a little frustrated. Want to talk about it?",
+            "That sounds annoying! What happened?",
+            "It’s okay to feel this way. What’s been on your mind?",
+            "Frustration happens to everyone. Do you want to vent?"
+        ],
+        "moderate": [
+            "I hear you, that sounds really upsetting. What’s going on?",
+            "It sounds like this really got to you. Want to talk through it?",
+            "That must have been really frustrating. I’m here to listen.",
+            "I understand why you’re upset. Let’s figure this out together."
+        ],
+        "intense": [
+            "I can tell you’re really upset. Take a deep breath – I’m here.",
+            "That sounds really difficult. I want to support you however I can.",
+            "Anger can be overwhelming. Want to talk about it?",
+            "Let’s work through this together. You don’t have to deal with it alone."
+        ]
+    },
+    "fear": {
+        "mild": [
+            "That sounds a little unsettling. Want to talk about it?",
+            "I understand. Fear can be tough to deal with.",
+            "It’s okay to feel uneasy sometimes. What’s making you feel this way?",
+            "You’re safe here. Do you want to share what’s on your mind?"
+        ],
+        "moderate": [
+            "That sounds really scary. I’m here to listen.",
+            "Fear can feel overwhelming, but you’re not alone.",
+            "I hear you. Facing fears is hard, but you’re strong.",
+            "You don’t have to go through this alone. I’m here."
+        ],
+        "intense": [
+            "That sounds terrifying. I want to help you feel safe.",
+            "You’re not alone. I believe in your strength to get through this.",
+            "It’s okay to be scared. I’m here with you every step of the way.",
+            "Take a deep breath. I’m right here with you."
+        ]
+    },
+    "neutral": {
+        "default": [
+            "I see. Tell me more if you’d like.",
+            "Got it. How do you feel about that?",
+            "I’m listening. What’s on your mind?",
+            "Understood. Is there anything else you’d like to share?"
+        ]
+    }
 }
 
 # Load spaCy for sentence parsing
 nlp = spacy.load("en_core_web_sm")
 
-# Improved negation mapping (including direct replacements for "not bad" cases)
+# Improved negation mapping (handling more cases)
 negation_mapping = {
     "bad": "good",
     "terrible": "okay",
@@ -245,7 +220,12 @@ negation_phrases = {
     "not restless": "peaceful",
     "not hesitant": "assertive",
     "not discouraged": "determined",
-    "not great": "bad",  # Added this to handle 'not great' cases
+    "not great": "bad",
+    "not good": "bad",  # Added this
+    "don't feel good": "feel bad",  # Fix for "I don't feel good"
+    "do not feel good": "feel bad",
+    "don't feel bad": "feel neutral",
+    "do not feel bad": "feel neutral",
 }
 
 def preprocess_text(text: str) -> str:
@@ -274,23 +254,42 @@ def preprocess_text(text: str) -> str:
         if token.dep_ == "neg" and token.head.text in negation_mapping:
             new_text.append(negation_mapping[token.head.text])  # Replace with mapped word
             skip_next = True  # Skip the next word to avoid redundancy
-        elif i > 0 and doc[i - 1].text in ["do", "does", "did"] and token.text == "not":
-            # Handle "do not" or "don't" before an adjective
-            if i + 1 < len(doc) and doc[i + 1].text in negation_mapping:
-                new_text.append(negation_mapping[doc[i + 1].text])  # Replace adjective with mapped opposite
-                skip_next = True  # Skip the adjective since we replaced it
-                continue
+        elif token.text in ["not", "n't"] and i + 1 < len(doc) and doc[i + 1].pos_ in ["ADJ", "VERB"]:
+            # Handle negations before adjectives or verbs
+            negated_word = negation_mapping.get(doc[i + 1].text, f"not_{doc[i + 1].text}")
+            new_text.append(negated_word)
+            skip_next = True
+        else:
+            new_text.append(token.text)
 
+    processed_text = " ".join(new_text)
     
+    # Debugging Output
     print(f"Original: {text}")
-    print(f"Processed: {' '.join(new_text)}")
+    print(f"Processed: {processed_text}")
 
-    return " ".join(new_text)
+    return processed_text
+
+# Function to get a response based on emotion and confidence level
+def get_nuanced_response(emotion, confidence):
+    intensity = (
+        "intense" if confidence >= 0.8 else
+        "moderate" if confidence >= 0.55 else
+        "mild" if confidence >= 0.3 else
+        "default"
+    )
+
+    # Get responses safely
+    emotion_responses = response_dict.get(emotion, response_dict["neutral"])  # Default to "neutral"
+    intensity_responses = emotion_responses.get(intensity, response_dict["neutral"]["default"])  # Default to neutral's default responses
+    
+    return random.choice(intensity_responses)
+
 
 @app.post("/analyze")
-async def chat_response(request: MessageRequest):
+async def chat_response(request: dict):
     try:
-        processed_message = preprocess_text(request.message)
+        processed_message = preprocess_text(request["message"])
 
         # Get predictions in parallel
         results = [emotion_pipeline1(processed_message)[0], emotion_pipeline2(processed_message)[0]]
@@ -315,11 +314,11 @@ async def chat_response(request: MessageRequest):
         final_confidence = label_scores[final_label]
 
         # **Handle neutral case** (low-confidence emotions)
-        if final_confidence < 0.4:  # Threshold for neutrality
+        if final_confidence < 0.3:  # Lowered threshold from 0.4 to 0.3
             final_label = "neutral"
 
         # Get a response
-        response = random.choice(response_dict.get(final_label, ["I'm here for you."]))
+        response = get_nuanced_response(final_label, final_confidence)
 
         return {
             "emotion": final_label,
@@ -380,7 +379,12 @@ async def analyze_emotion(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="Invalid image file")
 
         # Perform emotion analysis
-        analysis = DeepFace.analyze(image, actions=['emotion'], enforce_detection=False)[0]
+        analysis = DeepFace.analyze(image, actions=['emotion'], enforce_detection=False)
+
+        if not analysis:  # No face detected
+            return {"dominant_emotion": "unknown", "emotion_scores": {}}
+
+        analysis = analysis[0]  # Extract first face detected
 
         emotion_scores = {k: float(v) for k, v in analysis.get("emotion", {}).items()}
         dominant_emotion = analysis.get("dominant_emotion", "unknown")
