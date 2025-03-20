@@ -274,8 +274,13 @@ def preprocess_text(text: str) -> str:
         if token.dep_ == "neg" and token.head.text in negation_mapping:
             new_text.append(negation_mapping[token.head.text])  # Replace with mapped word
             skip_next = True  # Skip the next word to avoid redundancy
-        elif token.text not in ["not", "n't"]:  # Remove "not" after replacing
-            new_text.append(token.text)
+        elif i > 0 and doc[i - 1].text in ["do", "does", "did"] and token.text == "not":
+            # Handle "do not" or "don't" before an adjective
+            if i + 1 < len(doc) and doc[i + 1].text in negation_mapping:
+                new_text.append(negation_mapping[doc[i + 1].text])  # Replace adjective with mapped opposite
+                skip_next = True  # Skip the adjective since we replaced it
+                continue
+
     
     print(f"Original: {text}")
     print(f"Processed: {' '.join(new_text)}")
