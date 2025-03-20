@@ -15,8 +15,15 @@ from transformers import pipeline
 import spacy
 from negspacy.negation import Negex
 import re
+from pymongo import MongoClient
+from datetime import datetime, timedelta, timezone
 
 app = FastAPI()
+
+# Connect to MongoDB
+client = MongoClient("mongodb+srv://mindang:mindang@mernapp.nxyjt.mongodb.net/?retryWrites=true&w=majority&appName=MERNapp")  
+db = client["ai_therapist"]
+users_collection = db["user_emotions"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,6 +32,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def store_emotion(user_id, message, emotion, confidence):
+    users_collection.update_one(
+        {"user_id": user_id},
+        {
+            "$set": {"last_emotion": emotion},
+            "$push": {
+                "emotions_history": {
+                    "$each": [{"emotion": emotion, "confidence": confidence}],
+                    "$slice": -20  # Keeps only the last 20 entries
+                }
+            }
+        },
+        upsert=True  # Ensures a new user record is created if one doesn't exist
+    )
 
 # Load models
 whisper_model = whisper.load_model("base")
@@ -177,7 +199,6 @@ response_dict = {
         ]
     }
 }
-
 
 # Load spaCy for sentence parsing
 nlp = spacy.load("en_core_web_sm")
@@ -333,11 +354,51 @@ def get_nuanced_response(emotion, confidence):
     
     return random.choice(intensity_responses)
 
+def get_emotional_trends(user_id, limit=20):
+    user_data = users_collection.find_one({"user_id": user_id})
+    if not user_data or "emotions_history" not in user_data:
+        return {}
+
+    emotions_history = user_data["emotions_history"][-limit:]
+    
+    # Count occurrences of each emotion
+    emotion_counts = {}
+    for entry in emotions_history:
+        emotion = entry["emotion"]
+        emotion_counts[emotion] = emotion_counts.get(emotion, 0) + 1
+
+    # Convert counts into percentages
+    total = len(emotions_history)
+    emotion_trends = {k: v / total for k, v in emotion_counts.items()}
+    
+    return emotion_trends
+
+def get_last_trend_sent(user_id):
+    """Retrieve the last trend response timestamp for a user."""
+    user_data = users_collection.find_one({"user_id": user_id}, {"last_trend_sent": 1})
+    return user_data.get("last_trend_sent") if user_data else None
+
+def mark_trend_as_sent(user_id):
+    """Update the user's record to mark that a trend response has been sent."""
+    users_collection.update_one(
+        {"user_id": user_id},
+        {"$set": {"last_trend_sent": datetime.now(timezone.utc)}},  # ✅ Fixed
+        upsert=True
+    )
+
+TREND_COOLDOWN = timedelta(hours=24)  # Avoid repeating trend response for 24 hours
 
 @app.post("/analyze")
 async def chat_response(request: dict):
     try:
-        processed_message = preprocess_text(request["message"])
+        user_id = request.get("user_id")
+        message = request.get("message")
+
+        if not user_id or not message:
+            raise HTTPException(status_code=400, detail="Missing user_id or message")
+        
+        # Preprocess user input
+        processed_message = preprocess_text(message)
 
         # Get predictions in parallel
         results = [emotion_pipeline1(processed_message)[0], emotion_pipeline2(processed_message)[0]]
@@ -365,37 +426,101 @@ async def chat_response(request: dict):
         if final_confidence < 0.3:  # Lowered threshold from 0.4 to 0.3
             final_label = "neutral"
 
-        # Get a response
-        response = get_nuanced_response(final_label, final_confidence)
+                # Add slight variation at the end
+        response_variations = {
+            "joy": [
+                "What’s been making your day so great?",
+                "What’s the best thing that happened today?",
+                "What’s bringing you so much joy?",
+                "Your happiness is radiating! What’s been the highlight?",
+                "That must feel incredible! Want to share more about it?",
+                "What’s something that made you smile today?",
+                "You deserve this happiness! How are you celebrating?"
+            ],
+            "sadness": [
+                "That sounds tough. Do you need advice or just a listening ear?",
+                "You’re not alone in this. Want to unpack it together?",
+                "How are you holding up?",
+                "Would you like to share more? I’m here to listen.",
+                "I hear you. Do you want to explore that feeling further?",
+                "Take your time. I'm here when you're ready.",
+                "What’s been the hardest part for you?",
+                "What can I do to support you?",
+                "If you could change one thing about this situation, what would it be?",
+            ],
+            "anger": [
+                "I see this is frustrating for you. Want to talk about it?",
+                "That must have been really upsetting. What happened?",
+                "It makes sense why you’d feel this way. What’s on your mind?",
+                "I hear you. Let’s talk through it together.",
+                "If you could change one thing about this situation, what would it be?",
+                "Do you want to vent, or should I offer some perspective?",
+                "That seems important to you. Let’s talk about it."
+            ],
+            "fear": [
+                "Do you want to talk more about it?",
+                "You’re safe here. What’s making you feel this way?",
+                "Would you like to share more?",
+                "Fear can be tough to deal with. Take your time—I'm here.",
+                "How can I support you?",
+                "It’s okay to feel this way. What else is going on?",
+                "How can I best support you right now?"
+            ],
+            "neutral": [
+                "How does that make you feel?",
+                "Tell me more.",
+                "I’m here to listen.",
+                "That sounds important. Let's discuss.",
+                "I'm all ears. What's on your mind?",
+                "That makes sense. What else is going on?"
+            ]
+        }
 
-        # Add slight variation at the end
-        variation = random.choice([
-            "How does that make you feel?",  
-            "Want to talk more about it?",  
-            "Tell me more.",  
-            "I'm here to listen.",  
-            "That sounds important. Let's discuss.",  
-            "I'm all ears. What's on your mind?",  
-            "That must be a lot to process.",  
-            "Would you like to share more?",  
-            "You’re not alone in this. Want to unpack it together?",  
-            "That makes sense. What else is going on?",  
-            "I hear you. Do you want to explore that feeling further?",  
-            "Take your time. I'm here when you're ready.",  
-            "That sounds tough. Do you need advice or just a listening ear?",  
-            "What’s been the hardest part for you?",  
-            "If you could change one thing about this situation, what would it be?",  
-            "It’s okay to feel this way. What can I do to support you?",  
-            "Do you want to vent, or should I offer some perspective?",  
-            "That seems important to you. Let’s talk about it.",  
-            "How can I best support you right now?"  
-        ])
+        # Store emotion in database
+        store_emotion(user_id, message, final_label, final_confidence)
 
-        return {
+        # Get emotional trends
+        emotion_trends = get_emotional_trends(user_id)
+        last_trend_sent = get_last_trend_sent(user_id)
+
+        # **Check if trend response should be sent**
+        trend_response = ""
+        now = datetime.now(timezone.utc)
+
+        if (
+            (last_trend_sent is None or now - last_trend_sent > TREND_COOLDOWN) and  # Only send if enough time has passed
+            (
+                emotion_trends.get("sadness", 0) > 0.6 or 
+                emotion_trends.get("joy", 0) > 0.6 or 
+                len(emotion_trends) > 3
+            )
+        ):
+            if emotion_trends.get("sadness", 0) > 0.6:
+                trend_response = "I've noticed you've been feeling down frequently. Do you want to talk about what's been troubling you?"
+            elif emotion_trends.get("joy", 0) > 0.6:
+                trend_response = "You’ve been feeling great lately! What’s been keeping you in high spirits?"
+            elif len(emotion_trends) > 3:
+                trend_response = "Your emotions have been shifting a lot. Want to explore what's causing these changes?"
+            
+            # **Mark trend as sent**
+            mark_trend_as_sent(user_id)
+
+        # Get a nuanced response
+        nuanced_response = get_nuanced_response(final_label, final_confidence)
+
+
+        # Select response variation based on detected emotion
+        variation = random.choice(response_variations.get(final_label, response_variations["neutral"]))
+
+        # Return response
+        response_data = {
             "emotion": final_label,
             "confidence": final_confidence,
-            "response": f"{response} {variation}"
+            "response": trend_response if trend_response else f"{nuanced_response.strip()} {variation}"
         }
+
+        return response_data
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
