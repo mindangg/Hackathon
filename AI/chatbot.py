@@ -33,21 +33,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def store_emotion(user_id, message, emotion, confidence):
-    users_collection.update_one(
-        {"user_id": user_id},
-        {
-            "$set": {"last_emotion": emotion},
-            "$push": {
-                "emotions_history": {
-                    "$each": [{"emotion": emotion, "confidence": confidence}],
-                    "$slice": -20  # Keeps only the last 20 entries
-                }
-            }
-        },
-        upsert=True  # Ensures a new user record is created if one doesn't exist
-    )
-
 # Load models
 whisper_model = whisper.load_model("base")
 
@@ -332,10 +317,6 @@ def preprocess_text(text: str) -> str:
             new_text.append(token.text)
 
     processed_text = " ".join(new_text)
-    
-    # Debugging Output
-    print(f"Original: {text}")
-    print(f"Processed: {processed_text}")
 
     return processed_text
 
@@ -354,39 +335,125 @@ def get_nuanced_response(emotion, confidence):
     
     return random.choice(intensity_responses)
 
+
+def store_emotion(user_id, message, emotion, confidence):
+    users_collection.update_one(
+        {"user_id": user_id},
+        {
+            "$set": {"last_emotion": emotion},
+            "$push": {
+                "emotions_history": {
+                    "$each": [{"emotion": emotion, "confidence": confidence}],
+                    "$slice": -20  # Keeps only the last 20 entries
+                }
+            }
+        },
+        upsert=True  # Ensures a new user record is created if one doesn't exist
+    )
+
 def get_emotional_trends(user_id, limit=20):
-    user_data = users_collection.find_one({"user_id": user_id})
+    """Trả về xu hướng cảm xúc của người dùng dựa trên lịch sử gần nhất."""
+    user_data = users_collection.find_one({"user_id": user_id}, {"emotions_history": 1})
     if not user_data or "emotions_history" not in user_data:
         return {}
 
     emotions_history = user_data["emotions_history"][-limit:]
-    
-    # Count occurrences of each emotion
+
+    if not emotions_history:
+        return {}
+
+    # Đếm số lần xuất hiện của mỗi cảm xúc
     emotion_counts = {}
     for entry in emotions_history:
         emotion = entry["emotion"]
         emotion_counts[emotion] = emotion_counts.get(emotion, 0) + 1
 
-    # Convert counts into percentages
+    # Tính toán phần trăm từng cảm xúc
     total = len(emotions_history)
+    if total == 0:
+        return {}
+
     emotion_trends = {k: v / total for k, v in emotion_counts.items()}
-    
     return emotion_trends
 
+
 def get_last_trend_sent(user_id):
-    """Retrieve the last trend response timestamp for a user."""
+    """Lấy timestamp lần cuối cùng hệ thống gửi phản hồi về xu hướng cảm xúc."""
     user_data = users_collection.find_one({"user_id": user_id}, {"last_trend_sent": 1})
-    return user_data.get("last_trend_sent") if user_data else None
+    if not user_data or "last_trend_sent" not in user_data:
+        return None
+
+    last_sent = user_data["last_trend_sent"]
+    if isinstance(last_sent, datetime):
+        return last_sent if last_sent.tzinfo else last_sent.replace(tzinfo=timezone.utc)
+    return None
 
 def mark_trend_as_sent(user_id):
-    """Update the user's record to mark that a trend response has been sent."""
+    """Đánh dấu thời điểm đã gửi phản hồi về xu hướng cảm xúc."""
     users_collection.update_one(
         {"user_id": user_id},
-        {"$set": {"last_trend_sent": datetime.now(timezone.utc)}},  # ✅ Fixed
+        {"$set": {"last_trend_sent": datetime.now(timezone.utc)}},
         upsert=True
     )
 
-TREND_COOLDOWN = timedelta(hours=24)  # Avoid repeating trend response for 24 hours
+SHIFT_COOLDOWN = timedelta(minutes=10)  # Allow quick response to sudden shifts
+
+def get_last_distinct_emotions(user_id):
+    """Retrieve the last two DISTINCT recorded emotions for the user."""
+    user_data = users_collection.find_one({"user_id": user_id}, {"emotions_history": 1})
+    
+    if not user_data or "emotions_history" not in user_data:
+        return None, None
+
+    emotions_history = user_data["emotions_history"]
+
+    # Extract distinct emotions in reverse order
+    seen = set()
+    distinct_emotions = []
+
+    for entry in reversed(emotions_history):
+        emotion = entry["emotion"]
+        if emotion not in seen:
+            seen.add(emotion)
+            distinct_emotions.append(emotion)
+        if len(distinct_emotions) == 2:
+            break
+
+    if len(distinct_emotions) < 2:
+        return None, None  # Not enough distinct emotions
+
+    return distinct_emotions[1], distinct_emotions[0]  # Return (previous, latest)
+
+def get_last_two_emotions(user_id):
+    """Retrieve the last two recorded emotions for the user."""
+    user_data = users_collection.find_one({"user_id": user_id}, {"emotions_history": 1})
+    
+    if not user_data or "emotions_history" not in user_data:
+        return None, None
+
+    emotions_history = user_data["emotions_history"]
+    
+    if len(emotions_history) < 2:
+        return None, emotions_history[-1]["emotion"] if emotions_history else None
+    
+    return emotions_history[-2]["emotion"], emotions_history[-1]["emotion"]
+
+def get_last_emotion_change(user_id):
+    """Retrieve the last timestamp when the user's emotion significantly changed."""
+    user_data = users_collection.find_one({"user_id": user_id}, {"last_emotion_change": 1})
+
+    last_change = user_data.get("last_emotion_change")
+    if isinstance(last_change, datetime):
+        return last_change if last_change.tzinfo else last_change.replace(tzinfo=timezone.utc)
+    return None
+
+def mark_emotion_change(user_id):
+    """Mark when an emotional shift occurs."""
+    users_collection.update_one(
+        {"user_id": user_id},
+        {"$set": {"last_emotion_change": datetime.now(timezone.utc)}},
+        upsert=True
+    )
 
 @app.post("/analyze")
 async def chat_response(request: dict):
@@ -417,6 +484,9 @@ async def chat_response(request: dict):
         if total_confidence > 0:
             for label in label_scores:
                 label_scores[label] /= total_confidence
+        else:
+            final_label = "neutral"
+            final_confidence = 1.0  # Default full confidence in neutral
 
         # Choose the highest weighted label
         final_label = max(label_scores, key=label_scores.get)
@@ -426,19 +496,19 @@ async def chat_response(request: dict):
         if final_confidence < 0.3:  # Lowered threshold from 0.4 to 0.3
             final_label = "neutral"
 
-                # Add slight variation at the end
+        # Add slight variation at the end
         response_variations = {
             "joy": [
                 "What’s been making your day so great?",
                 "What’s the best thing that happened today?",
                 "What’s bringing you so much joy?",
-                "Your happiness is radiating! What’s been the highlight?",
+                "What’s been the highlight?",
                 "That must feel incredible! Want to share more about it?",
                 "What’s something that made you smile today?",
                 "You deserve this happiness! How are you celebrating?"
             ],
             "sadness": [
-                "That sounds tough. Do you need advice or just a listening ear?",
+                "Do you need advice or just a listening ear?",
                 "You’re not alone in this. Want to unpack it together?",
                 "How are you holding up?",
                 "Would you like to share more? I’m here to listen.",
@@ -479,44 +549,38 @@ async def chat_response(request: dict):
         # Store emotion in database
         store_emotion(user_id, message, final_label, final_confidence)
 
-        # Get emotional trends
-        emotion_trends = get_emotional_trends(user_id)
-        last_trend_sent = get_last_trend_sent(user_id)
-
-        # **Check if trend response should be sent**
-        trend_response = ""
+        # Detect emotional shift BEFORE trends
+        previous_emotion, last_emotion = get_last_two_emotions(user_id)
+        last_emotion_change = get_last_emotion_change(user_id)
+        print('last', last_emotion_change)
+        emotional_shift_response = ""
         now = datetime.now(timezone.utc)
 
-        if (
-            (last_trend_sent is None or now - last_trend_sent > TREND_COOLDOWN) and  # Only send if enough time has passed
-            (
-                emotion_trends.get("sadness", 0) > 0.6 or 
-                emotion_trends.get("joy", 0) > 0.6 or 
-                len(emotion_trends) > 3
-            )
-        ):
-            if emotion_trends.get("sadness", 0) > 0.6:
-                trend_response = "I've noticed you've been feeling down frequently. Do you want to talk about what's been troubling you?"
-            elif emotion_trends.get("joy", 0) > 0.6:
-                trend_response = "You’ve been feeling great lately! What’s been keeping you in high spirits?"
-            elif len(emotion_trends) > 3:
-                trend_response = "Your emotions have been shifting a lot. Want to explore what's causing these changes?"
+        emotional_shift_response = ""
+        if previous_emotion and last_emotion and last_emotion_change:
+            time_since_change = now - last_emotion_change
             
-            # **Mark trend as sent**
-            mark_trend_as_sent(user_id)
+            if previous_emotion != last_emotion:
+                if previous_emotion == "sadness" and last_emotion == "joy":
+                    emotional_shift_response = "You seem to be happier now! What changed?"
+                elif previous_emotion == "joy" and last_emotion == "sadness":
+                    emotional_shift_response = "I noticed you were feeling great earlier. Is something bothering you now?"
+                mark_emotion_change(user_id)
 
         # Get a nuanced response
-        nuanced_response = get_nuanced_response(final_label, final_confidence)
-
+        nuanced_response = get_nuanced_response(final_label, final_confidence) or "I'm here to listen."
 
         # Select response variation based on detected emotion
         variation = random.choice(response_variations.get(final_label, response_variations["neutral"]))
+
+        # Construct final response
+        response = f"{nuanced_response.strip()} {variation}"
 
         # Return response
         response_data = {
             "emotion": final_label,
             "confidence": final_confidence,
-            "response": trend_response if trend_response else f"{nuanced_response.strip()} {variation}"
+            "response": emotional_shift_response if emotional_shift_response else response
         }
 
         return response_data
