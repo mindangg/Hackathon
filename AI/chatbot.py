@@ -593,32 +593,23 @@ async def chat_response(request: dict):
         # if previous_emotion and last_emotion and last_emotion_change:
         #     time_since_change = now - last_emotion_change
             
-        if previous_emotion != last_emotion:
-            if previous_emotion == "sadness" and last_emotion == "joy":
-                emotional_shift_response = "You seem to be happier now! What changed?"
-            elif previous_emotion == "joy" and last_emotion == "sadness":
-                emotional_shift_response = "I noticed you were feeling great earlier. Is something bothering you now?"
-            elif previous_emotion == "anger" and last_emotion == "neutral":
-                emotional_shift_response = "You seemed upset earlier, but now you're calmer. What helped you feel better?"
-            elif previous_emotion == "neutral" and last_emotion == "anger":
-                emotional_shift_response = "You were feeling neutral before, but now you're upset. Do you want to talk about what's making you angry?"
-            elif previous_emotion == "fear" and last_emotion == "neutral":
-                emotional_shift_response = "You seemed anxious earlier, but now you're feeling neutral. Did something reassure you?"
-            elif previous_emotion == "neutral" and last_emotion == "fear":
-                emotional_shift_response = "You were feeling fine before, but now you seem worried. Is there something on your mind?"
-            elif previous_emotion == "sadness" and last_emotion == "anger":
-                emotional_shift_response = "You were feeling down earlier, and now you're frustrated. Do you want to talk about what’s causing this?"
-            elif previous_emotion == "anger" and last_emotion == "sadness":
-                emotional_shift_response = "You seemed angry before, but now you're feeling sad. Did something happen to change how you feel?"
-            elif previous_emotion == "joy" and last_emotion == "neutral":
-                emotional_shift_response = "You were feeling happy earlier, and now you're neutral. Is everything still going well?"
-            elif previous_emotion == "neutral" and last_emotion == "joy":
-                emotional_shift_response = "You seem to be in a better mood now! What made you feel happy?"
-            elif previous_emotion == "fear" and last_emotion == "sadness":
-                emotional_shift_response = "You were anxious earlier, and now you're feeling sad. Do you want to talk about what's going on?"
-            elif previous_emotion == "sadness" and last_emotion == "fear":
-                emotional_shift_response = "You were feeling down before, and now you seem worried. Is something making you anxious?"
+        emotional_responses = {
+            ("sadness", "joy"): "I’m glad to see you feeling happier! What helped lift your mood?",
+            ("joy", "sadness"): "You seemed happy earlier. Did something happen that's making you feel down now?",
+            ("anger", "neutral"): "You seemed upset before, but now you’re calmer. Did something help you feel better?",
+            ("neutral", "anger"): "You were feeling neutral earlier, but now you’re upset. Want to talk about what’s bothering you?",
+            ("fear", "neutral"): "You seemed anxious before, but now you're feeling more at ease. Did something reassure you?",
+            ("neutral", "fear"): "You seemed fine earlier, but now you look worried. Is there something on your mind?",
+            ("sadness", "anger"): "You were feeling down earlier, and now you're frustrated. Do you want to share what’s causing this shift?",
+            ("anger", "sadness"): "You seemed angry before, but now you look sad. Did something change how you feel?",
+            ("joy", "neutral"): "You were happy before, and now you're neutral. Is everything still going okay?",
+            ("neutral", "joy"): "You seem to be in a better mood now! What made your day brighter?",
+            ("fear", "sadness"): "You were feeling anxious before, and now you seem sad. Want to talk about what’s going on?",
+            ("sadness", "fear"): "You seemed sad before, and now you look worried. Is there something making you anxious?"
+        }
 
+        if previous_emotion != last_emotion:
+            emotional_shift_response = emotional_responses.get((previous_emotion, last_emotion))
 
         # Get emotional trends
         emotion_trends = get_emotional_trends(user_id)
@@ -678,22 +669,6 @@ async def chat_response(request: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# @app.post("/analyze")
-# async def chat_response(request: MessageRequest):
-#     try:
-#         emotion_result = emotion_pipeline(request.message)[0]
-
-#         label = emotion_result['label'].lower()
-#         response = random.choice(response_dict.get(label, ["I'm here for you."]))
-
-#         return {
-#             "emotion": label,
-#             "confidence": emotion_result['score'],
-#             "response": response
-#         }
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
 @app.post("/speech-to-text")
 async def speech_to_text(file: UploadFile = File(...)):
     try:
@@ -718,24 +693,38 @@ async def text_to_speech(request: MessageRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+def preprocess_image(image):
+    # image = cv2.resize(image, (224, 224))  # Resize for model compatibility
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert to RGB (DeepFace uses RGB)
+    image = image / 255.0  # Normalize pixels
+    return image
+
 @app.post("/analyze-emotion")
 async def analyze_emotion(file: UploadFile = File(...)):
     try:
-        # Read the uploaded image
+        # Read and decode the image
         image_data = await file.read()
         image = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
 
         if image is None:
             raise HTTPException(status_code=400, detail="Invalid image file")
 
-        # Perform emotion analysis
-        analysis = DeepFace.analyze(image, actions=['emotion'], enforce_detection=False)
+        # Preprocess the image
+        image = preprocess_image(image)
 
-        if not analysis:  # No face detected
+        # Perform emotion analysis using DeepFace
+        results = DeepFace.analyze(
+            image, 
+            actions=['emotion'], 
+            model_name="EfficientNet", 
+            enforce_detection=True  # Enforce face detection for better accuracy
+        )
+
+        if not results:
             return {"dominant_emotion": "unknown", "emotion_scores": {}}
 
-        analysis = analysis[0]  # Extract first face detected
-
+        # Extract emotions
+        analysis = results[0]
         emotion_scores = {k: float(v) for k, v in analysis.get("emotion", {}).items()}
         dominant_emotion = analysis.get("dominant_emotion", "unknown")
 
@@ -744,5 +733,8 @@ async def analyze_emotion(file: UploadFile = File(...)):
             "emotion_scores": emotion_scores
         }
 
+    except HTTPException as http_err:
+        raise http_err  # Preserve FastAPI HTTP exceptions
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error: {str(e)}")  # Log the error for debugging
+        raise HTTPException(status_code=500, detail="Internal Server Error. Please try again.")

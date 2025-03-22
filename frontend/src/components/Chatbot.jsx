@@ -57,6 +57,7 @@ export default function Chatbot() {
             return;
         }
     
+        // const imageSrc = webcamRef.current.getScreenshot();
         const imageSrc = webcamRef.current.getScreenshot();
         if (!imageSrc) {
             console.error('Failed to capture image from webcam.');
