@@ -694,9 +694,9 @@ async def text_to_speech(request: MessageRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 def preprocess_image(image):
-    # image = cv2.resize(image, (224, 224))  # Resize for model compatibility
+    image = cv2.resize(image, (224, 224))  # Resize for model compatibility
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert to RGB (DeepFace uses RGB)
-    image = image / 255.0  # Normalize pixels
+    # image = image / 255.0  # Normalize pixels
     return image
 
 @app.post("/analyze-emotion")
@@ -716,7 +716,7 @@ async def analyze_emotion(file: UploadFile = File(...)):
         results = DeepFace.analyze(
             image, 
             actions=['emotion'], 
-            model_name="EfficientNet", 
+            detector_backend="retinaface",
             enforce_detection=True  # Enforce face detection for better accuracy
         )
 

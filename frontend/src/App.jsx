@@ -10,6 +10,7 @@ import Signup from './pages/Signup'
 
 import Chatbot from './components/Chatbot'
 import Header from './components/Header'
+import Assessment from './pages/Assessment'
 
 import Notification from './components/Notification'
 
@@ -25,6 +26,7 @@ export default function App() {
             <Route path='/login' element={!user ? <Login/> : <Navigate to='/'/>}/>
             <Route path='/signup' element={!user ? <Signup/> : <Navigate to='/'/>}/>
             <Route path='/chatbot' element={<Chatbot/>}/>
+            <Route path='/assessment' element={<Assessment/>}/>
             {/* <Route path="/assessment" element={<Assessment />} /> */}
           </Routes>
         <Notification/>
