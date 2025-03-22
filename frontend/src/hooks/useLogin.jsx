@@ -12,7 +12,7 @@ export const useLogin = () => {
         setIsLoading(true)
         setError(null)
 
-        const response = await fetch('http://localhost:4000/api/user/login', {
+        const response = await fetch('http://localhost:4000/api/user/login' || 'https://hackathon-2yz0.onrender.com/api/user/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
