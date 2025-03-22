@@ -1,6 +1,6 @@
 import React, { useRef } from 'react'
 
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import logo from '../assets/healthshark.jpg'
 
@@ -9,9 +9,17 @@ import { faClover } from '@fortawesome/free-solid-svg-icons'
 import { faCapsules } from '@fortawesome/free-solid-svg-icons'
 import { faBowlFood } from '@fortawesome/free-solid-svg-icons'
 
+import { useAuthContext } from '../hooks/useAuthContext';
+import { useNotificationContext } from '../hooks/useNotificationContext'
+
 import '../styles/Home.css'
 
 export default function Home() {
+    const { user } = useAuthContext()
+    const { showNotification } = useNotificationContext()
+
+    const navigate = useNavigate()
+
     const infoRef = useRef(null)
     const serviceRef = useRef(null)
     const supportRef = useRef(null)
@@ -21,6 +29,13 @@ export default function Home() {
           ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
       else
           console.log('ref.current is null')
+    }
+
+    const handleClick = () => {
+      if (!user)
+          showNotification('Please login to use chatbot') 
+      else
+          navigate('/chatbot')
     }
 
     return (
@@ -40,9 +55,9 @@ export default function Home() {
               <Link to='/assessment' className='nav-1'>
                 Start Assessment
               </Link>
-              <Link to='/chatbot' className='nav-2'>
+              <a className='nav-2' onClick={handleClick} style={{cursor: 'pointer'}}>
                 Start Your Health Chat Today
-              </Link>
+              </a>
             </div>
 
             <div className='service'>

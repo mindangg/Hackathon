@@ -1,13 +1,13 @@
 const chatbot = async (req, res) => {
     try {
-        const { message } = req.body
+        const { user_id, message } = req.body
 
         const response = await fetch('http://localhost:5000/analyze', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ message })
+            body: JSON.stringify({ user_id, message })
         })
 
         if (!response.ok) {
@@ -19,7 +19,6 @@ const chatbot = async (req, res) => {
             })
         }
 
-  
         const data = await response.json()
         console.log("Chatbot API Working")
         res.status(200).json(data)

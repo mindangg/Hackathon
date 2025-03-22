@@ -2,9 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import Webcam from 'react-webcam';
 import Lottie from 'react-lottie-player';
 import talkingAnimation from '../animations/avatar.json';
+
+import { useAuthContext } from '../hooks/useAuthContext';
+
 import '../styles/Chatbot.css';
 
 export default function Chatbot() {
+    const { user } = useAuthContext()
+
     const [messages, setMessages] = useState([
         { sender: 'Therapist', text: 'Hello! How are you feeling today?' },
     ]);
@@ -93,7 +98,6 @@ export default function Chatbot() {
             console.error('Error analyzing emotion:', error);
         }
     };    
-    
 
     const handleSend = async () => {
         if (input.trim() === '') return;
@@ -109,7 +113,7 @@ export default function Chatbot() {
             const response = await fetch('http://localhost:4000/api/chatbot', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: input })
+                body: JSON.stringify({ user_id: user.user._id, message: input })
             });
 
             const json = await response.json();
