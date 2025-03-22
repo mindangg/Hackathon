@@ -598,7 +598,27 @@ async def chat_response(request: dict):
                 emotional_shift_response = "You seem to be happier now! What changed?"
             elif previous_emotion == "joy" and last_emotion == "sadness":
                 emotional_shift_response = "I noticed you were feeling great earlier. Is something bothering you now?"
-            # mark_emotion_change(user_id)
+            elif previous_emotion == "anger" and last_emotion == "neutral":
+                emotional_shift_response = "You seemed upset earlier, but now you're calmer. What helped you feel better?"
+            elif previous_emotion == "neutral" and last_emotion == "anger":
+                emotional_shift_response = "You were feeling neutral before, but now you're upset. Do you want to talk about what's making you angry?"
+            elif previous_emotion == "fear" and last_emotion == "neutral":
+                emotional_shift_response = "You seemed anxious earlier, but now you're feeling neutral. Did something reassure you?"
+            elif previous_emotion == "neutral" and last_emotion == "fear":
+                emotional_shift_response = "You were feeling fine before, but now you seem worried. Is there something on your mind?"
+            elif previous_emotion == "sadness" and last_emotion == "anger":
+                emotional_shift_response = "You were feeling down earlier, and now you're frustrated. Do you want to talk about what’s causing this?"
+            elif previous_emotion == "anger" and last_emotion == "sadness":
+                emotional_shift_response = "You seemed angry before, but now you're feeling sad. Did something happen to change how you feel?"
+            elif previous_emotion == "joy" and last_emotion == "neutral":
+                emotional_shift_response = "You were feeling happy earlier, and now you're neutral. Is everything still going well?"
+            elif previous_emotion == "neutral" and last_emotion == "joy":
+                emotional_shift_response = "You seem to be in a better mood now! What made you feel happy?"
+            elif previous_emotion == "fear" and last_emotion == "sadness":
+                emotional_shift_response = "You were anxious earlier, and now you're feeling sad. Do you want to talk about what's going on?"
+            elif previous_emotion == "sadness" and last_emotion == "fear":
+                emotional_shift_response = "You were feeling down before, and now you seem worried. Is something making you anxious?"
+
 
         # Get emotional trends
         emotion_trends = get_emotional_trends(user_id)
@@ -619,6 +639,12 @@ async def chat_response(request: dict):
                 trend_response = "I've noticed you've been feeling down frequently. Do you want to talk about what's been troubling you?"
             elif emotion_trends.get("joy", 0) > 6:
                 trend_response = "You’ve been feeling great lately! What’s been keeping you in high spirits?"
+            elif emotion_trends.get("anger", 0) > 6:
+                trend_response = "You’ve been feeling quite frustrated or angry recently. Would you like to share what’s been bothering you?"
+            elif emotion_trends.get("fear", 0) > 6:
+                trend_response = "It seems like you've been feeling anxious or worried a lot. Is there something on your mind that I can help you with?"
+            elif emotion_trends.get("neutral", 0) > 6:
+                trend_response = "You’ve been feeling pretty neutral for a while. How have things been going for you lately?"
             elif len(emotion_trends) > 3:
                 trend_response = "Your emotions have been shifting a lot. Want to explore what's causing these changes?"
             
@@ -639,7 +665,6 @@ async def chat_response(request: dict):
             final_response = trend_response
         else:
             final_response = f"{nuanced_response.strip()} {variation}"
-
 
         # Return response
         response_data = {
