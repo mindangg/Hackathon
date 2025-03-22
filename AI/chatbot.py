@@ -407,7 +407,7 @@ def mark_trend_as_sent(user_id):
         upsert=True
     )
 
-TREND_COOLDOWN = timedelta(seconds=1)  # Allow quick response to sudden shifts
+TREND_COOLDOWN = timedelta(seconds=1)
 
 def get_last_two_emotions(user_id):
     """Retrieve the last two recorded emotions for the user."""
