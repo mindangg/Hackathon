@@ -469,7 +469,6 @@ async def chat_response(request: dict):
             "joy": [
                 "What’s been making your day so great?",
                 "What’s the best thing that happened today?",
-                "What’s bringing you so much joy?",
                 "What’s been the highlight?",
                 "That must feel incredible! Want to share more about it?",
                 "What’s something that made you smile today?",
