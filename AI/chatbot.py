@@ -42,7 +42,6 @@ emotion_pipeline2 = pipeline("text-classification", model="j-hartmann/emotion-en
 class MessageRequest(BaseModel):
     message: str
 
-# Load Spacy NLP model for negation detection
 nlp = spacy.load("en_core_web_sm")
 
 nlp.add_pipe("negex", config={"ent_types": ["ADJ", "VERB"]})
@@ -185,10 +184,8 @@ response_dict = {
     }
 }
 
-# Load spaCy for sentence parsing
 nlp = spacy.load("en_core_web_sm")
 
-# Improved negation mapping (handling more cases)
 negation_mapping = {
     "bad": "good",
     "terrible": "okay",
@@ -233,7 +230,6 @@ negation_mapping = {
     "amazing": "happy"
 }
 
-# Special cases where "not X" should be mapped directly
 negation_phrases = {
     "not bad": "good",
     "not terrible": "okay",
@@ -284,10 +280,6 @@ negation_phrases = {
 }
 
 def preprocess_text(text: str) -> str:
-    """
-    Processes the text to handle negations and improve sentiment detection.
-    Uses NLP to ensure proper context handling.
-    """
     text = text.lower().strip()
 
     # Check for direct negation phrases
@@ -295,7 +287,7 @@ def preprocess_text(text: str) -> str:
         if phrase in text:
             text = text.replace(phrase, replacement)
 
-    doc = nlp(text)  # Process with spaCy for sentence structure
+    doc = nlp(text)
 
     new_text = []
     skip_next = False
@@ -307,10 +299,10 @@ def preprocess_text(text: str) -> str:
 
         # Detect negation before a mapped word
         if token.dep_ == "neg" and token.head.text in negation_mapping:
-            new_text.append(negation_mapping[token.head.text])  # Replace with mapped word
-            skip_next = True  # Skip the next word to avoid redundancy
+            new_text.append(negation_mapping[token.head.text])
+            skip_next = True 
         elif token.text in ["not", "n't"] and i + 1 < len(doc) and doc[i + 1].pos_ in ["ADJ", "VERB"]:
-            # Handle negations before adjectives or verbs
+
             negated_word = negation_mapping.get(doc[i + 1].text, f"not_{doc[i + 1].text}")
             new_text.append(negated_word)
             skip_next = True
@@ -321,7 +313,6 @@ def preprocess_text(text: str) -> str:
 
     return processed_text
 
-# Function to get a response based on emotion and confidence level
 def get_nuanced_response(emotion, confidence):
     intensity = (
         "intense" if confidence >= 0.8 else
@@ -330,9 +321,8 @@ def get_nuanced_response(emotion, confidence):
         "default"
     )
 
-    # Get responses safely
-    emotion_responses = response_dict.get(emotion, response_dict["neutral"])  # Default to "neutral"
-    intensity_responses = emotion_responses.get(intensity, response_dict["neutral"]["default"])  # Default to neutral's default responses
+    emotion_responses = response_dict.get(emotion, response_dict["neutral"])
+    intensity_responses = emotion_responses.get(intensity, response_dict["neutral"]["default"])
     
     return random.choice(intensity_responses)
 
@@ -360,11 +350,9 @@ def get_emotional_trends(user_id, limit=20, scale_total=10):
 
     emotions_history = user_data["emotions_history"]
 
-    # **Ensure at least 10 emotions exist before proceeding**
     if len(emotions_history) < 10:
         return {}
 
-    # Get the last `limit` emotions
     emotions_history = emotions_history[-limit:]
 
     # Count occurrences of each emotion
@@ -410,7 +398,6 @@ def mark_trend_as_sent(user_id):
 TREND_COOLDOWN = timedelta(seconds=1)
 
 def get_last_two_emotions(user_id):
-    """Retrieve the last two recorded emotions for the user."""
     user_data = users_collection.find_one({"user_id": user_id}, {"emotions_history": 1})
 
     if not user_data or "emotions_history" not in user_data:
@@ -454,14 +441,14 @@ async def chat_response(request: dict):
                 label_scores[label] /= total_confidence
         else:
             final_label = "neutral"
-            final_confidence = 1.0  # Default full confidence in neutral
+            final_confidence = 1.0
 
         # Choose the highest weighted label
         final_label = max(label_scores, key=label_scores.get)
         final_confidence = label_scores[final_label]
 
         # **Handle neutral case** (low-confidence emotions)
-        if final_confidence < 0.3:  # Lowered threshold from 0.4 to 0.3
+        if final_confidence < 0.3:
             final_label = "neutral"
 
         # Add slight variation at the end
@@ -524,8 +511,6 @@ async def chat_response(request: dict):
         emotional_shift_response = ""
 
         trend_response = ""
-        # if previous_emotion and last_emotion and last_emotion_change:
-        #     time_since_change = now - last_emotion_change
             
         emotional_responses = {
             ("sadness", "joy"): "I’m glad to see you feeling happier! What helped lift your mood?",
@@ -583,7 +568,6 @@ async def chat_response(request: dict):
         variation = random.choice(response_variations.get(final_label, response_variations["neutral"]))
 
         # Construct final response
-
         if emotional_shift_response:
             final_response = emotional_shift_response
         elif trend_response:
@@ -643,10 +627,9 @@ async def analyze_emotion(file: UploadFile = File(...)):
         if image is None:
             raise HTTPException(status_code=400, detail="Invalid image file")
 
-        # Preprocess the image
         image = preprocess_image(image)
 
-        # Perform emotion analysis using DeepFace
+        # Perform emotion analysis
         results = DeepFace.analyze(
             image, 
             actions=['emotion'], 
@@ -668,7 +651,7 @@ async def analyze_emotion(file: UploadFile = File(...)):
         }
 
     except HTTPException as http_err:
-        raise http_err  # Preserve FastAPI HTTP exceptions
+        raise http_err
     except Exception as e:
-        print(f"Error: {str(e)}")  # Log the error for debugging
+        print(f"Error: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error. Please try again.")

@@ -42,7 +42,8 @@ export default function Home() {
         <div>
           <div className='home'>
             <img src={logo} alt='HealthShark-logo' />
-            <h1>WELCOME TO HEALTHSHARK</h1>
+            <h1>HEALTHSHARK</h1>
+            <h2><i>"YOUR MINDS MATTER, YOUR FEELINGS COUNT"</i></h2>
             <p>
               In today's fast-paced world, health has become a top priority.
               HealthShark was created with the mission of providing a comprehensive
