@@ -12,7 +12,7 @@ import cv2
 import numpy as np
 from deepface import DeepFace
 from transformers import pipeline
-import spacy
+import spacy 
 from negspacy.negation import Negex
 import re
 from pymongo import MongoClient
